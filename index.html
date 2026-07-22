@@ -414,6 +414,46 @@
     return '<path d="' + d + '" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah)"/>';
   }
 
+  /* ---------- Animation: das Männchen führt die Technik vor ---------- */
+
+  var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var DUR = "2.6s";
+
+  // Ablauf: Ausgangsposition -> Technik -> kurz halten -> zurück
+  function animSeq(vals) {
+    if (vals.length === 3) {
+      return { v: vals[0] + ";" + vals[1] + ";" + vals[2] + ";" + vals[2] + ";" + vals[0], k: "0;0.2;0.38;0.75;1" };
+    }
+    return { v: vals[0] + ";" + vals[1] + ";" + vals[1] + ";" + vals[0], k: "0;0.38;0.75;1" };
+  }
+
+  // Arm oder offene Hand als Linienzug, animiert zwischen Punktlisten
+  function animPoly(ptsArr, color, width) {
+    if (REDUCE) return poly(ptsArr[ptsArr.length - 1], color, width);
+    var a = animSeq(ptsArr);
+    return '<polyline points="' + ptsArr[0] + '" fill="none" stroke="' + color + '" stroke-width="' + width +
+      '" stroke-linecap="round" stroke-linejoin="round">' +
+      '<animate attributeName="points" values="' + a.v + '" keyTimes="' + a.k + '" dur="' + DUR + '" repeatCount="indefinite"/></polyline>';
+  }
+
+  // Faust (oder Punkt), animiert entlang der Positionen
+  function animFist(posArr, color, r) {
+    r = r || 7;
+    var last = posArr[posArr.length - 1];
+    if (REDUCE) return '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="' + r + '" fill="' + color + '"/>';
+    var ax = animSeq(posArr.map(function (p) { return String(p[0]); }));
+    var ay = animSeq(posArr.map(function (p) { return String(p[1]); }));
+    return '<circle cx="' + posArr[0][0] + '" cy="' + posArr[0][1] + '" r="' + r + '" fill="' + color + '">' +
+      '<animate attributeName="cx" values="' + ax.v + '" keyTimes="' + ax.k + '" dur="' + DUR + '" repeatCount="indefinite"/>' +
+      '<animate attributeName="cy" values="' + ay.v + '" keyTimes="' + ay.k + '" dur="' + DUR + '" repeatCount="indefinite"/></circle>';
+  }
+
+  // Gegenarm in der Seitenansicht: zieht während der Technik zur Hüfte zurück (Hikite)
+  function hikiteSide() {
+    return animPoly(["76,60 104,59 132,58", "76,60 70,86 64,92"], SVG_INK, 7) +
+      animFist([[138, 58], [63, 97]], SVG_INK);
+  }
+
   // Seitenansicht (Figur schaut nach rechts)
   function sideFigure(armParts, arrowD, note) {
     var s = '<svg viewBox="0 0 220 212" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technik, Seitenansicht">' + MARKER;
@@ -422,7 +462,7 @@
     s += poly("74,55 72,120", SVG_INK, 7);
     s += poly("72,120 90,150 86,186", SVG_INK, 7);
     s += poly("72,120 58,150 54,186", SVG_INK, 7);
-    s += poly("76,60 64,90", SVG_INK, 7) + fist(63, 97, SVG_INK);
+    s += hikiteSide();
     s += armParts;
     if (arrowD) s += arrow(arrowD);
     if (note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + note + "</text>";
@@ -498,50 +538,84 @@
     { name: "Junzuki", kanji: "順突き", german: "Fauststoß, gleichseitig",
       desc: "Gerader Fauststoß mit dem vorderen Arm – Faust und vorderes Bein sind auf derselben Seite.",
       combo: "Stand dazu: Junzuki-dachi",
-      art: sideFigure(poly("78,58 150,56", SVG_ACCENT, 8.5) + fist(156, 56, SVG_ACCENT), "M118,42 L170,42") },
+      art: sideFigure(
+        animPoly(["78,58 70,84 66,96", "78,58 116,57 150,56"], SVG_ACCENT, 8.5) +
+        animFist([[66, 98], [156, 56]], SVG_ACCENT),
+        "M118,42 L170,42") },
     { name: "Gyakuzuki", kanji: "逆突き", german: "Fauststoß, gegengleich",
       desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der Hüftdrehung.",
       combo: "Stand dazu: Gyakuzuki-dachi",
-      art: sideFigure(poly("78,58 150,56", SVG_ACCENT, 8.5) + fist(156, 56, SVG_ACCENT),
+      art: sideFigure(
+        animPoly(["78,58 70,84 66,96", "78,58 116,57 150,56"], SVG_ACCENT, 8.5) +
+        animFist([[66, 98], [156, 56]], SVG_ACCENT),
         "M52,112 C60,126 86,126 94,112", "Hüfte dreht mit") },
     { name: "Uraken-uchi", kanji: "裏拳打ち", german: "Faustrückenschlag",
       desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf.",
       combo: "Kommt u. a. in der Kata Naihanchi vor",
-      art: sideFigure(poly("78,58 108,42 140,50", SVG_ACCENT, 8.5) + fist(146, 52, SVG_ACCENT), "M112,22 C138,24 154,34 160,44") },
+      art: sideFigure(
+        animPoly(["78,58 100,52 88,42", "78,58 108,42 140,50"], SVG_ACCENT, 8.5) +
+        animFist([[87, 40], [146, 52]], SVG_ACCENT),
+        "M112,22 C138,24 154,34 160,44") },
     { name: "Tettsui-uchi", kanji: "鉄槌打ち", german: "Hammerfaustschlag",
       desc: "Schlag mit der Unterseite der geschlossenen Faust – wie ein Hammer von oben.",
-      art: sideFigure(poly("78,58 102,34 132,48", SVG_ACCENT, 8.5) + fist(137, 51, SVG_ACCENT), "M120,14 C146,18 158,34 156,52") },
+      art: sideFigure(
+        animPoly(["78,58 88,32 72,20", "78,58 108,22 132,26", "78,58 102,34 132,48"], SVG_ACCENT, 8.5) +
+        animFist([[71, 18], [135, 25], [137, 51]], SVG_ACCENT),
+        "M120,14 C146,18 158,34 156,52") },
     { name: "Shuto-uchi", kanji: "手刀打ち", german: "Handkantenschlag",
       desc: "Schlag mit der Außenkante der offenen Hand.",
-      art: sideFigure(poly("78,58 106,42 136,54", SVG_ACCENT, 8.5) + openHand(146, 57, 70, SVG_ACCENT), "M114,22 C142,26 158,38 164,50") },
+      art: sideFigure(
+        animPoly(["78,58 94,38 82,28", "78,58 106,42 136,54"], SVG_ACCENT, 8.5) +
+        animPoly(["82,28 74,14", "138,54 160,60"], SVG_ACCENT, 9),
+        "M114,22 C142,26 158,38 164,50") },
     { name: "Nukite", kanji: "貫手", german: "Fingerspitzenstoß",
       desc: "Gerader Stoß mit den gestreckten Fingerspitzen – die „Speerhand“.",
       combo: "Meist aus dem Zenkutsu-dachi",
-      art: sideFigure(poly("78,58 144,56", SVG_ACCENT, 8.5) + openHand(154, 56, 88, SVG_ACCENT), "M116,42 L174,42") },
+      art: sideFigure(
+        animPoly(["78,58 70,84 66,96", "78,58 112,57 144,56"], SVG_ACCENT, 8.5) +
+        animPoly(["66,96 62,112", "146,56 170,55"], SVG_ACCENT, 9),
+        "M116,42 L174,42") },
     { name: "Empi-uchi", kanji: "猿臂打ち", german: "Ellbogenstoß",
       desc: "Stoß oder Schlag mit dem Ellbogen – die Technik für den Nahkampf. (Auch: Hiji-ate)",
-      art: sideFigure(poly("78,58 118,54 92,42", SVG_ACCENT, 8.5) + '<circle cx="120" cy="54" r="5" fill="' + SVG_ACCENT + '"/>', "M132,54 L164,54") },
+      art: sideFigure(
+        animPoly(["78,58 72,84 64,94", "78,58 118,54 92,42"], SVG_ACCENT, 8.5) +
+        animFist([[63, 96], [90, 42]], SVG_ACCENT, 6) +
+        animFist([[72, 84], [120, 54]], SVG_ACCENT, 5),
+        "M132,54 L164,54") },
     { name: "Age-uke", kanji: "上げ受け", german: "Abwehr nach oben",
       desc: "Der Unterarm steigt und lenkt einen Angriff über den Kopf ab. (Auch: Jōdan-uke)",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(poly("130,66 148,50 108,26", SVG_ACCENT, 8.5) + fist(103, 24, SVG_ACCENT), "M158,84 C162,58 152,40 134,32") },
+      art: frontFigure(
+        animPoly(["130,66 138,94 130,112", "130,66 148,50 108,26"], SVG_ACCENT, 8.5) +
+        animFist([[128, 114], [103, 24]], SVG_ACCENT),
+        "M158,84 C162,58 152,40 134,32") },
     { name: "Soto-uke", kanji: "外受け", german: "Abwehr von außen nach innen",
       desc: "Der Unterarm schwingt von außen zur Körpermitte und fegt den Angriff zur Seite.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(poly("130,66 146,90 136,48", SVG_ACCENT, 8.5) + fist(135, 42, SVG_ACCENT), "M184,40 C174,32 158,30 148,36") },
+      art: frontFigure(
+        animPoly(["130,66 160,58 176,38", "130,66 146,90 136,48"], SVG_ACCENT, 8.5) +
+        animFist([[178, 36], [135, 42]], SVG_ACCENT),
+        "M184,40 C174,32 158,30 148,36") },
     { name: "Uchi-uke", kanji: "内受け", german: "Abwehr von innen nach außen",
       desc: "Der Unterarm schwingt von der Körpermitte nach außen.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(poly("130,66 138,92 156,54", SVG_ACCENT, 8.5) + fist(158, 48, SVG_ACCENT), "M116,38 C130,30 150,30 162,38") },
+      art: frontFigure(
+        animPoly(["130,66 122,90 108,102", "130,66 138,92 156,54"], SVG_ACCENT, 8.5) +
+        animFist([[106, 104], [158, 48]], SVG_ACCENT),
+        "M116,38 C130,30 150,30 162,38") },
     { name: "Gedan-barai", kanji: "下段払い", german: "Abwehr nach unten",
       desc: "Fegende Abwehr nach unten – gegen Tritte und tiefe Angriffe.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(poly("130,66 140,96 148,126", SVG_ACCENT, 8.5) + fist(150, 133, SVG_ACCENT), "M126,84 C138,96 146,108 150,120") },
+      art: frontFigure(
+        animPoly(["130,66 118,78 100,64", "130,66 140,96 148,126"], SVG_ACCENT, 8.5) +
+        animFist([[98, 62], [150, 133]], SVG_ACCENT),
+        "M126,84 C138,96 146,108 150,120") },
     { name: "Shuto-uke", kanji: "手刀受け", german: "Handkantenabwehr",
       desc: "Abwehr mit der Handkante; die andere Hand schützt offen vor der Brust.",
       combo: "Typisch im Neko-ashi-dachi",
       art: frontFigure(
-        poly("130,66 142,92 158,58", SVG_ACCENT, 8.5) + openHand(162, 50, 30, SVG_ACCENT) +
+        animPoly(["130,66 118,78 102,58", "130,66 142,92 158,58"], SVG_ACCENT, 8.5) +
+        animPoly(["100,56 90,44", "160,56 172,44"], SVG_ACCENT, 9) +
         poly("78,66 92,84", SVG_INK, 7) + openHand(97, 90, 40, SVG_INK),
         "M116,36 C132,28 150,28 162,36") }
   ];
