@@ -1,0 +1,14 @@
+{
+  "name": "Karate Lernkarten",
+  "short_name": "Karate",
+  "description": "Wadō-Ryū Lernkarten: Stände und Handtechniken",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F6F2E9",
+  "theme_color": "#B3342A",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
