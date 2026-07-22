@@ -460,7 +460,10 @@
     if (arc) {
       var ddx = f1[1] - f0[1], ddy = f1[2] - f0[2];
       var len = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
-      var bow = 4 * e * (1 - e) * arc; // 0 an den Enden, Maximum in Segmentmitte
+      // e fürs Kime-Easing überschwingt kurz über 1 hinaus – der Bogen darf dabei
+      // nicht auf die Gegenseite kippen, daher hier begrenzen
+      var eb = e < 0 ? 0 : (e > 1 ? 1 : e);
+      var bow = 4 * eb * (1 - eb) * arc; // 0 an den Enden, Maximum in Segmentmitte
       x += ddy / len * bow;
       y += -ddx / len * bow;
     }
@@ -556,7 +559,7 @@
   function setC(el, x, y) { el.setAttribute("cx", x); el.setAttribute("cy", y); }
   function vis(el, on) { el.setAttribute("opacity", on ? "1" : "0"); }
 
-  function applyPose(it, u) {
+  function applyPose(it, u, dt) {
     var fig = it.spec, g = GEO[fig.view], e = it.els;
     /* Reset statt Rückwärts-Animation: die Technik wird gehalten, dann blendet
        die Figur kurz aus, springt unsichtbar in die Ausgangsposition und blendet
@@ -596,6 +599,26 @@
         p.x += Math.sin(kk * Math.PI * 3) * (1 - kk) * 2.2;
       }
       var r = elbowFor(sx, sy, p.x, p.y, g.l1, g.l2, p.m);
+      /* Ellbogen weich nachführen: wechselt die IK die Beugerichtung (z. B. von
+         der Hüft-Kammer in den Stoß), springt der Ziel-Ellbogen schlagartig auf
+         die andere Armseite. Statt des Sprungs dämpfen wir den gezeichneten
+         Ellbogen exponentiell Richtung Ziel und stellen danach die exakten
+         Armlängen wieder her – aus dem Ruck wird eine schnelle Drehbewegung. */
+      var sm = it.sm || (it.sm = {});
+      var prev = sm[X];
+      if (prev && dt !== undefined && op > 0.2) {
+        var blend = 1 - Math.exp(-dt * 26);
+        var ex = prev[0] + (r.ex - prev[0]) * blend;
+        var ey = prev[1] + (r.ey - prev[1]) * blend;
+        for (var ci = 0; ci < 2; ci++) {
+          var d1x = ex - sx, d1y = ey - sy, d1 = Math.sqrt(d1x * d1x + d1y * d1y) || 1;
+          ex = sx + d1x / d1 * g.l1; ey = sy + d1y / d1 * g.l1;
+          var d2x = ex - r.hx, d2y = ey - r.hy, d2 = Math.sqrt(d2x * d2x + d2y * d2y) || 1;
+          ex = r.hx + d2x / d2 * g.l2; ey = r.hy + d2y / d2 * g.l2;
+        }
+        r.ex = ex; r.ey = ey;
+      }
+      sm[X] = [r.ex, r.ey];
       setL(e["aU" + X + "o"], sx, sy, r.ex, r.ey);
       setL(e["aU" + X + "i"], sx, sy, r.ex, r.ey);
       setL(e["aF" + X + "o"], r.ex, r.ey, r.hx, r.hy);
@@ -615,8 +638,10 @@
 
   function animTick(ts) {
     if (!animator.start) animator.start = ts;
+    var dt = animator.last ? Math.min(0.1, (ts - animator.last) / 1000) : 0.016;
+    animator.last = ts;
     var u = ((ts - animator.start) / 1000 % CYCLE) / CYCLE;
-    for (var i = 0; i < animator.items.length; i++) applyPose(animator.items[i], u);
+    for (var i = 0; i < animator.items.length; i++) applyPose(animator.items[i], u, dt);
     animator.raf = requestAnimationFrame(animTick);
   }
 
@@ -639,6 +664,7 @@
     for (var j = 0; j < animator.items.length; j++) applyPose(animator.items[j], 0.5);
     if (!REDUCE && animator.items.length) {
       animator.start = 0;
+      animator.last = 0;
       animator.raf = requestAnimationFrame(animTick);
     }
   }
