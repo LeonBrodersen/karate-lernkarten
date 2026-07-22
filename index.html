@@ -404,85 +404,164 @@
     return '<polyline points="' + points + '" fill="none" stroke="' + color + '" stroke-width="' + width +
       '" stroke-linecap="round" stroke-linejoin="round"/>';
   }
-  function fist(x, y, color) {
-    return '<circle cx="' + x + '" cy="' + y + '" r="7" fill="' + color + '"/>';
-  }
-  function openHand(x, y, angle, color) {
-    return '<rect x="-4" y="-13" width="8" height="26" rx="3.5" transform="translate(' + x + "," + y + ") rotate(" + angle + ')" fill="' + color + '"/>';
-  }
-  function arrow(d) {
-    return '<path d="' + d + '" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah)"/>';
-  }
-
-  /* ---------- Animation: das Männchen führt die Technik vor ---------- */
+  /* ---------- Animierte Figuren: Skelett mit Schulter- und Ellbogengelenken ----------
+     Jede Technik ist als Bahn der Faust/Hand beschrieben (Keyframes).
+     Der Ellbogen wird daraus über Zweigelenk-Kinematik berechnet.
+     Ablauf pro Schleife: Ausholen -> Technik (schnell) -> halten -> langsam zurück. */
 
   var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var DUR = "2.6s";
+  var CYCLE = 3.2; // Sekunden pro Durchlauf
 
-  // Ablauf: Ausgangsposition -> Technik -> kurz halten -> zurück
-  function animSeq(vals) {
-    if (vals.length === 3) {
-      return { v: vals[0] + ";" + vals[1] + ";" + vals[2] + ";" + vals[2] + ";" + vals[0], k: "0;0.2;0.38;0.75;1" };
+  var EASES = {
+    io: function (u) { return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; },
+    out: function (u) { return 1 - Math.pow(1 - u, 3); },
+    lin: function (u) { return u; }
+  };
+
+  // Ellbogenposition aus Schulter und Hand (Armlängen l1/l2), mode wählt die Beugerichtung
+  function elbowFor(sx, sy, hx, hy, l1, l2, mode) {
+    var dx = hx - sx, dy = hy - sy;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    var max = l1 + l2 - 0.5, min = Math.abs(l1 - l2) + 0.5;
+    if (d < 0.001) { dx = 0.001; d = 0.001; }
+    if (d > max) { hx = sx + dx * max / d; hy = sy + dy * max / d; dx = hx - sx; dy = hy - sy; d = max; }
+    if (d < min) { hx = sx + dx * min / d; hy = sy + dy * min / d; dx = hx - sx; dy = hy - sy; d = min; }
+    var a = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+    var h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+    var mx = sx + a * dx / d, my = sy + a * dy / d;
+    var e1 = [mx - h * dy / d, my + h * dx / d];
+    var e2 = [mx + h * dy / d, my - h * dx / d];
+    var pick;
+    if (mode === "up") pick = e1[1] < e2[1] ? e1 : e2;
+    else if (mode === "fwd") pick = e1[0] > e2[0] ? e1 : e2;
+    else if (mode === "back") pick = e1[0] < e2[0] ? e1 : e2;
+    else pick = e1[1] > e2[1] ? e1 : e2; // "down"
+    return { ex: pick[0], ey: pick[1], hx: hx, hy: hy };
+  }
+
+  // Keyframes abtasten. Eintrag: [t, x, y, ease?, mode?]
+  function sampleFrames(frames, u, fallbackMode) {
+    var last = frames[frames.length - 1];
+    if (u >= last[0]) return { x: last[1], y: last[2], m: last[4] || fallbackMode };
+    var i = 0;
+    while (i < frames.length - 2 && frames[i + 1][0] <= u) i++;
+    var f0 = frames[i], f1 = frames[i + 1];
+    var span = f1[0] - f0[0];
+    var v = span > 0 ? (u - f0[0]) / span : 1;
+    v = Math.max(0, Math.min(1, v));
+    var e = EASES[f1[3] || "io"](v);
+    return {
+      x: f0[1] + (f1[1] - f0[1]) * e,
+      y: f0[2] + (f1[2] - f0[2]) * e,
+      m: f1[4] || fallbackMode
+    };
+  }
+
+  // Körpergeometrie beider Ansichten
+  var GEO = {
+    side: {
+      head: [95, 49, 13], neck: [92, 64], pelvis: [96, 120], shoulder: [93, 68],
+      l1: 27, l2: 25,
+      legs: ["96,120 114,148 112,180 130,180", "96,120 82,150 70,180 54,180"]
+    },
+    front: {
+      head: [110, 47, 13], neck: [110, 66], pelvis: [110, 126],
+      shoulderR: [134, 70], shoulderL: [86, 70],
+      l1: 26, l2: 24,
+      legs: ["110,126 94,154 90,184 78,184", "110,126 126,154 130,184 142,184"]
     }
-    return { v: vals[0] + ";" + vals[1] + ";" + vals[1] + ";" + vals[0], k: "0;0.38;0.75;1" };
-  }
+  };
 
-  // Arm oder offene Hand als Linienzug, animiert zwischen Punktlisten
-  function animPoly(ptsArr, color, width) {
-    if (REDUCE) return poly(ptsArr[ptsArr.length - 1], color, width);
-    var a = animSeq(ptsArr);
-    return '<polyline points="' + ptsArr[0] + '" fill="none" stroke="' + color + '" stroke-width="' + width +
-      '" stroke-linecap="round" stroke-linejoin="round">' +
-      '<animate attributeName="points" values="' + a.v + '" keyTimes="' + a.k + '" dur="' + DUR + '" repeatCount="indefinite"/></polyline>';
-  }
-
-  // Faust (oder Punkt), animiert entlang der Positionen
-  function animFist(posArr, color, r) {
-    r = r || 7;
-    var last = posArr[posArr.length - 1];
-    if (REDUCE) return '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="' + r + '" fill="' + color + '"/>';
-    var ax = animSeq(posArr.map(function (p) { return String(p[0]); }));
-    var ay = animSeq(posArr.map(function (p) { return String(p[1]); }));
-    return '<circle cx="' + posArr[0][0] + '" cy="' + posArr[0][1] + '" r="' + r + '" fill="' + color + '">' +
-      '<animate attributeName="cx" values="' + ax.v + '" keyTimes="' + ax.k + '" dur="' + DUR + '" repeatCount="indefinite"/>' +
-      '<animate attributeName="cy" values="' + ay.v + '" keyTimes="' + ay.k + '" dur="' + DUR + '" repeatCount="indefinite"/></circle>';
-  }
-
-  // Gegenarm in der Seitenansicht: zieht während der Technik zur Hüfte zurück (Hikite)
-  function hikiteSide() {
-    return animPoly(["76,60 104,59 132,58", "76,60 70,86 64,92"], SVG_INK, 7) +
-      animFist([[138, 58], [63, 97]], SVG_INK);
-  }
-
-  // Seitenansicht (Figur schaut nach rechts)
-  function sideFigure(armParts, arrowD, note) {
-    var s = '<svg viewBox="0 0 220 212" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technik, Seitenansicht">' + MARKER;
+  function figureSvg(c) {
+    var g = GEO[c.fig.view];
+    var s = '<svg viewBox="0 0 220 212" data-tech="' + c.id + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bewegungsablauf der Technik">';
     s += '<line x1="20" y1="188" x2="200" y2="188" stroke="' + SVG_LINE + '" stroke-width="2"/>';
-    s += '<circle cx="74" cy="42" r="13" fill="none" stroke="' + SVG_INK + '" stroke-width="4"/>';
-    s += poly("74,55 72,120", SVG_INK, 7);
-    s += poly("72,120 90,150 86,186", SVG_INK, 7);
-    s += poly("72,120 58,150 54,186", SVG_INK, 7);
-    s += hikiteSide();
-    s += armParts;
-    if (arrowD) s += arrow(arrowD);
-    if (note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + note + "</text>";
+    s += poly(g.legs[0], SVG_INK, 7) + poly(g.legs[1], SVG_INK, 7);
+    if (c.fig.view === "front") s += poly("86,70 134,70", SVG_INK, 7);
+    s += '<polyline class="f-torso" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="7" stroke-linecap="round"/>';
+    s += '<circle class="f-head" r="' + g.head[2] + '" fill="none" stroke="' + SVG_INK + '" stroke-width="4"/>';
+    s += '<polyline class="f-armO" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += '<circle class="f-fistO" r="6.5" fill="' + SVG_INK + '" opacity="0"/>';
+    s += '<polyline class="f-openO" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="8" stroke-linecap="round" opacity="0"/>';
+    s += '<polyline class="f-armA" points="" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    s += '<circle class="f-fistA" r="6.5" fill="' + SVG_ACCENT + '" opacity="0"/>';
+    s += '<polyline class="f-openA" points="" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="8" stroke-linecap="round" opacity="0"/>';
+    s += '<circle class="f-elb" r="5" fill="' + SVG_ACCENT + '" opacity="0"/>';
+    if (c.fig.note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.note + "</text>";
     return s + "</svg>";
   }
 
-  // Frontansicht (für Abwehrtechniken)
-  function frontFigure(armParts, arrowD, note) {
-    var s = '<svg viewBox="0 0 220 212" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Technik, Frontansicht">' + MARKER;
-    s += '<line x1="20" y1="188" x2="200" y2="188" stroke="' + SVG_LINE + '" stroke-width="2"/>';
-    s += '<circle cx="104" cy="40" r="13" fill="none" stroke="' + SVG_INK + '" stroke-width="4"/>';
-    s += poly("78,66 130,66", SVG_INK, 7);
-    s += poly("104,53 104,126", SVG_INK, 7);
-    s += poly("104,126 88,186", SVG_INK, 7);
-    s += poly("104,126 120,186", SVG_INK, 7);
-    s += poly("78,66 68,96", SVG_INK, 7) + fist(67, 103, SVG_INK);
-    s += armParts;
-    if (arrowD) s += arrow(arrowD);
-    if (note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + note + "</text>";
-    return s + "</svg>";
+  var FIGS = {}; // id -> fig-Spezifikation, wird nach den Kartendaten gefüllt
+
+  var animator = { items: [], raf: 0, start: 0 };
+
+  function applyPose(it, u) {
+    var fig = it.spec, g = GEO[fig.view];
+    var dx = fig.drive ? sampleFrames(fig.drive, u, "").x : 0;
+    it.els.torso.setAttribute("points", (g.neck[0] + dx) + "," + g.neck[1] + " " + g.pelvis[0] + "," + g.pelvis[1]);
+    it.els.head.setAttribute("cx", g.head[0] + dx);
+    it.els.head.setAttribute("cy", g.head[1]);
+    var arms = [
+      { spec: fig.accent, sh: fig.view === "side" ? g.shoulder : g.shoulderR, arm: it.els.armA, fist: it.els.fistA, open: it.els.openA, dot: fig.elbowDot },
+      { spec: fig.other, sh: fig.view === "side" ? g.shoulder : g.shoulderL, arm: it.els.armO, fist: it.els.fistO, open: it.els.openO, dot: false }
+    ];
+    for (var k = 0; k < arms.length; k++) {
+      var A = arms[k];
+      var sx = A.sh[0] + (fig.view === "side" ? dx : 0), sy = A.sh[1];
+      var p = sampleFrames(A.spec.frames, u, A.spec.mode || "down");
+      var r = elbowFor(sx, sy, p.x, p.y, g.l1, g.l2, p.m);
+      A.arm.setAttribute("points", sx + "," + sy + " " + r.ex + "," + r.ey + " " + r.hx + "," + r.hy);
+      if (A.spec.hand === "open") {
+        var ux = r.hx - r.ex, uy = r.hy - r.ey;
+        var len = Math.sqrt(ux * ux + uy * uy) || 1;
+        A.open.setAttribute("points", r.hx + "," + r.hy + " " + (r.hx + ux / len * 14) + "," + (r.hy + uy / len * 14));
+        A.open.setAttribute("opacity", "1");
+        A.fist.setAttribute("opacity", "0");
+      } else {
+        A.fist.setAttribute("cx", r.hx);
+        A.fist.setAttribute("cy", r.hy);
+        A.fist.setAttribute("opacity", "1");
+        A.open.setAttribute("opacity", "0");
+      }
+      if (A.dot) {
+        it.els.elb.setAttribute("cx", r.ex);
+        it.els.elb.setAttribute("cy", r.ey);
+        it.els.elb.setAttribute("opacity", "1");
+      }
+    }
+  }
+
+  function animTick(ts) {
+    if (!animator.start) animator.start = ts;
+    var u = ((ts - animator.start) / 1000 % CYCLE) / CYCLE;
+    for (var i = 0; i < animator.items.length; i++) applyPose(animator.items[i], u);
+    animator.raf = requestAnimationFrame(animTick);
+  }
+
+  function bindAnims() {
+    if (animator.raf) { cancelAnimationFrame(animator.raf); animator.raf = 0; }
+    animator.items = [];
+    var svgs = document.querySelectorAll("svg[data-tech]");
+    for (var i = 0; i < svgs.length; i++) {
+      var svg = svgs[i];
+      var spec = FIGS[svg.getAttribute("data-tech")];
+      if (!spec) continue;
+      animator.items.push({
+        spec: spec,
+        els: {
+          torso: svg.querySelector(".f-torso"), head: svg.querySelector(".f-head"),
+          armA: svg.querySelector(".f-armA"), fistA: svg.querySelector(".f-fistA"), openA: svg.querySelector(".f-openA"),
+          armO: svg.querySelector(".f-armO"), fistO: svg.querySelector(".f-fistO"), openO: svg.querySelector(".f-openO"),
+          elb: svg.querySelector(".f-elb")
+        }
+      });
+    }
+    // Endposition sofort zeigen; ohne Animationswunsch bleibt sie stehen
+    for (var j = 0; j < animator.items.length; j++) applyPose(animator.items[j], 0.5);
+    if (!REDUCE && animator.items.length) {
+      animator.start = 0;
+      animator.raf = requestAnimationFrame(animTick);
+    }
   }
 
   /* ---------- Kartendaten ---------- */
@@ -534,94 +613,87 @@
       art: stanceArt([{ side: "L", x: -13, y: -40, a: 0 }, { side: "R", x: 13, y: 40, a: 0 }]) }
   ];
 
+  // Hikite in der Seitenansicht: Gegenarm zieht während der Technik zur Hüfte zurück
+  var HIKITE_SIDE = { mode: "back", frames: [[0, 140, 68, null, "down"], [0.16, 140, 68, null, "down"], [0.30, 62, 95, "out", "back"], [0.62, 62, 95, null, "back"], [0.90, 140, 68, null, "down"]] };
+  // Faust bleibt schützend an der Hüfte (Seitenansicht)
+  var GUARD_HIP_SIDE = { mode: "back", frames: [[0, 62, 95]] };
+  // Frontansicht: Gegenfaust bleibt an der Hüfte
+  var GUARD_HIP_FRONT = { mode: "back", frames: [[0, 80, 112]] };
+
   var TECHS = [
     { name: "Junzuki", kanji: "順突き", german: "Fauststoß, gleichseitig",
       desc: "Gerader Fauststoß mit dem vorderen Arm – Faust und vorderes Bein sind auf derselben Seite.",
       combo: "Stand dazu: Junzuki-dachi",
-      art: sideFigure(
-        animPoly(["78,58 70,84 66,96", "78,58 116,57 150,56"], SVG_ACCENT, 8.5) +
-        animFist([[66, 98], [156, 56]], SVG_ACCENT),
-        "M118,42 L170,42") },
+      fig: { view: "side", drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0], [0.90, 0, 0]],
+        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.30, 147, 66, "out", "down"], [0.62, 147, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        other: HIKITE_SIDE } },
     { name: "Gyakuzuki", kanji: "逆突き", german: "Fauststoß, gegengleich",
-      desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der Hüftdrehung.",
+      desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der scharfen Hüftdrehung.",
       combo: "Stand dazu: Gyakuzuki-dachi",
-      art: sideFigure(
-        animPoly(["78,58 70,84 66,96", "78,58 116,57 150,56"], SVG_ACCENT, 8.5) +
-        animFist([[66, 98], [156, 56]], SVG_ACCENT),
-        "M52,112 C60,126 86,126 94,112", "Hüfte dreht mit") },
+      fig: { view: "side", note: "Hüfte dreht kraftvoll mit", drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0], [0.90, 0, 0]],
+        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.30, 152, 66, "out", "down"], [0.62, 152, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        other: HIKITE_SIDE } },
     { name: "Uraken-uchi", kanji: "裏拳打ち", german: "Faustrückenschlag",
-      desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf.",
+      desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf. Die Faust schnappt sofort zurück.",
       combo: "Kommt u. a. in der Kata Naihanchi vor",
-      art: sideFigure(
-        animPoly(["78,58 100,52 88,42", "78,58 108,42 140,50"], SVG_ACCENT, 8.5) +
-        animFist([[87, 40], [146, 52]], SVG_ACCENT),
-        "M112,22 C138,24 154,34 160,44") },
+      fig: { view: "side", drive: [[0, 0, 0], [0.16, 0, 0], [0.26, 3, 0, "out"], [0.62, 3, 0], [0.90, 0, 0]],
+        accent: { mode: "down", frames: [[0, 78, 80], [0.16, 78, 80], [0.26, 140, 44, "out"], [0.34, 140, 44], [0.44, 108, 64, "out"], [0.62, 108, 64], [0.90, 78, 80]] },
+        other: GUARD_HIP_SIDE } },
     { name: "Tettsui-uchi", kanji: "鉄槌打ち", german: "Hammerfaustschlag",
-      desc: "Schlag mit der Unterseite der geschlossenen Faust – wie ein Hammer von oben.",
-      art: sideFigure(
-        animPoly(["78,58 88,32 72,20", "78,58 108,22 132,26", "78,58 102,34 132,48"], SVG_ACCENT, 8.5) +
-        animFist([[71, 18], [135, 25], [137, 51]], SVG_ACCENT),
-        "M120,14 C146,18 158,34 156,52") },
+      desc: "Schlag mit der Unterseite der geschlossenen Faust – schwingt wie ein Hammer von oben herab.",
+      fig: { view: "side", drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0], [0.90, 0, 0]],
+        accent: { mode: "fwd", frames: [[0, 64, 96, null, "back"], [0.18, 96, 18, null, "fwd"], [0.25, 124, 28, "lin", "fwd"], [0.33, 140, 60, "out", "fwd"], [0.62, 140, 60, null, "fwd"], [0.90, 64, 96, null, "back"]] },
+        other: HIKITE_SIDE } },
     { name: "Shuto-uchi", kanji: "手刀打ち", german: "Handkantenschlag",
-      desc: "Schlag mit der Außenkante der offenen Hand.",
-      art: sideFigure(
-        animPoly(["78,58 94,38 82,28", "78,58 106,42 136,54"], SVG_ACCENT, 8.5) +
-        animPoly(["82,28 74,14", "138,54 160,60"], SVG_ACCENT, 9),
-        "M114,22 C142,26 158,38 164,50") },
+      desc: "Schlag mit der Außenkante der offenen Hand – vom Ohr aus in einem Bogen zum Hals geführt.",
+      fig: { view: "side", drive: [[0, 0, 0], [0.16, 0, 0], [0.32, 5, 0, "out"], [0.62, 5, 0], [0.90, 0, 0]],
+        accent: { mode: "down", hand: "open", frames: [[0, 78, 52], [0.16, 78, 52], [0.24, 118, 34, "lin", "fwd"], [0.32, 147, 60, "out", "down"], [0.62, 147, 60, null, "down"], [0.90, 78, 52]] },
+        other: HIKITE_SIDE } },
     { name: "Nukite", kanji: "貫手", german: "Fingerspitzenstoß",
       desc: "Gerader Stoß mit den gestreckten Fingerspitzen – die „Speerhand“.",
       combo: "Meist aus dem Zenkutsu-dachi",
-      art: sideFigure(
-        animPoly(["78,58 70,84 66,96", "78,58 112,57 144,56"], SVG_ACCENT, 8.5) +
-        animPoly(["66,96 62,112", "146,56 170,55"], SVG_ACCENT, 9),
-        "M116,42 L174,42") },
+      fig: { view: "side", drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0], [0.90, 0, 0]],
+        accent: { mode: "down", hand: "open", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.30, 147, 66, "out", "down"], [0.62, 147, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        other: HIKITE_SIDE } },
     { name: "Empi-uchi", kanji: "猿臂打ち", german: "Ellbogenstoß",
-      desc: "Stoß oder Schlag mit dem Ellbogen – die Technik für den Nahkampf. (Auch: Hiji-ate)",
-      art: sideFigure(
-        animPoly(["78,58 72,84 64,94", "78,58 118,54 92,42"], SVG_ACCENT, 8.5) +
-        animFist([[63, 96], [90, 42]], SVG_ACCENT, 6) +
-        animFist([[72, 84], [120, 54]], SVG_ACCENT, 5),
-        "M132,54 L164,54") },
+      desc: "Der Ellbogen stößt nach vorn, die Faust bleibt an der Brust – die Technik für den Nahkampf. (Auch: Hiji-ate)",
+      fig: { view: "side", elbowDot: true, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0], [0.90, 0, 0]],
+        accent: { mode: "fwd", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.30, 100, 64, "out", "fwd"], [0.62, 100, 64, null, "fwd"], [0.90, 64, 96, null, "back"]] },
+        other: GUARD_HIP_SIDE } },
     { name: "Age-uke", kanji: "上げ受け", german: "Abwehr nach oben",
-      desc: "Der Unterarm steigt und lenkt einen Angriff über den Kopf ab. (Auch: Jōdan-uke)",
+      desc: "Die Faust steigt vor dem Körper auf, der Unterarm lenkt den Angriff über den Kopf ab. (Auch: Jōdan-uke)",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(
-        animPoly(["130,66 138,94 130,112", "130,66 148,50 108,26"], SVG_ACCENT, 8.5) +
-        animFist([[128, 114], [103, 24]], SVG_ACCENT),
-        "M158,84 C162,58 152,40 134,32") },
+      fig: { view: "front",
+        accent: { mode: "fwd", frames: [[0, 140, 112, null, "fwd"], [0.16, 94, 86, "io", "down"], [0.30, 118, 24, "out", "fwd"], [0.62, 118, 24, null, "fwd"], [0.90, 140, 112, null, "fwd"]] },
+        other: GUARD_HIP_FRONT } },
     { name: "Soto-uke", kanji: "外受け", german: "Abwehr von außen nach innen",
-      desc: "Der Unterarm schwingt von außen zur Körpermitte und fegt den Angriff zur Seite.",
+      desc: "Ausholen mit der Faust neben dem Ohr, Ellbogen oben – dann schwingt der Unterarm im Halbkreis zur Körpermitte.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(
-        animPoly(["130,66 160,58 176,38", "130,66 146,90 136,48"], SVG_ACCENT, 8.5) +
-        animFist([[178, 36], [135, 42]], SVG_ACCENT),
-        "M184,40 C174,32 158,30 148,36") },
+      fig: { view: "front",
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 158, 42, "io", "fwd"], [0.32, 121, 52, "out", "down"], [0.62, 121, 52, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        other: GUARD_HIP_FRONT } },
     { name: "Uchi-uke", kanji: "内受け", german: "Abwehr von innen nach außen",
-      desc: "Der Unterarm schwingt von der Körpermitte nach außen.",
+      desc: "Ausholen an der gegenüberliegenden Hüfte – dann schwingt der Unterarm nach außen, Faust endet auf Schulterhöhe.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(
-        animPoly(["130,66 122,90 108,102", "130,66 138,92 156,54"], SVG_ACCENT, 8.5) +
-        animFist([[106, 104], [158, 48]], SVG_ACCENT),
-        "M116,38 C130,30 150,30 162,38") },
+      fig: { view: "front",
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 92, 98, "io", "down"], [0.32, 154, 50, "out", "down"], [0.62, 154, 50, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        other: GUARD_HIP_FRONT } },
     { name: "Gedan-barai", kanji: "下段払い", german: "Abwehr nach unten",
-      desc: "Fegende Abwehr nach unten – gegen Tritte und tiefe Angriffe.",
+      desc: "Ausholen mit der Faust an der gegenüberliegenden Schulter – dann fegt der Arm nach unten über das vordere Bein.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      art: frontFigure(
-        animPoly(["130,66 118,78 100,64", "130,66 140,96 148,126"], SVG_ACCENT, 8.5) +
-        animFist([[98, 62], [150, 133]], SVG_ACCENT),
-        "M126,84 C138,96 146,108 150,120") },
+      fig: { view: "front",
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 94, 50, "io", "down"], [0.32, 140, 118, "out", "down"], [0.62, 140, 118, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        other: GUARD_HIP_FRONT } },
     { name: "Shuto-uke", kanji: "手刀受け", german: "Handkantenabwehr",
-      desc: "Abwehr mit der Handkante; die andere Hand schützt offen vor der Brust.",
+      desc: "Die Handkante schneidet vom gegenüberliegenden Ohr nach außen; die andere Hand schützt offen vor der Brust.",
       combo: "Typisch im Neko-ashi-dachi",
-      art: frontFigure(
-        animPoly(["130,66 118,78 102,58", "130,66 142,92 158,58"], SVG_ACCENT, 8.5) +
-        animPoly(["100,56 90,44", "160,56 172,44"], SVG_ACCENT, 9) +
-        poly("78,66 92,84", SVG_INK, 7) + openHand(97, 90, 40, SVG_INK),
-        "M116,36 C132,28 150,28 162,36") }
+      fig: { view: "front",
+        accent: { mode: "down", hand: "open", frames: [[0, 140, 112, null, "fwd"], [0.18, 96, 46, "io", "down"], [0.32, 156, 60, "out", "down"], [0.62, 156, 60, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        other: { mode: "back", hand: "open", frames: [[0, 80, 112], [0.18, 80, 112], [0.32, 102, 86, "out", "down"], [0.62, 102, 86, null, "down"], [0.90, 80, 112]] } } }
   ];
 
   STANCES.forEach(function (c) { c.cat = "stand"; c.id = "s-" + c.name; });
-  TECHS.forEach(function (c) { c.cat = "hand"; c.id = "h-" + c.name; });
+  TECHS.forEach(function (c) { c.cat = "hand"; c.id = "h-" + c.name; FIGS[c.id] = c.fig; });
   var ALL = STANCES.concat(TECHS);
 
   /* ---------- Lernfortschritt (Leitner-Stufen 1–4) ---------- */
@@ -734,7 +806,7 @@
   }
 
   function imgFace(c) {
-    return '<div class="face-tag">' + catLabel(c.cat) + "</div>" + c.art;
+    return '<div class="face-tag">' + catLabel(c.cat) + "</div>" + (c.art ? c.art : figureSvg(c));
   }
   function nameFace(c, withDesc) {
     return '<div class="face-tag">' + catLabel(c.cat) + "</div>" +
@@ -758,6 +830,7 @@
     el.card.classList.remove("flipped");
     el.btnAgain.disabled = true;
     el.btnKnown.disabled = true;
+    bindAnims();
     updateProgress();
   }
 
@@ -785,6 +858,7 @@
     el.stage.classList.add("hidden");
     el.actions.classList.add("hidden");
     el.summary.classList.remove("hidden");
+    bindAnims();
     var cards = cardsForCat();
     var safe = cards.filter(function (c) { return boxOf(c.id) >= MAXBOX; }).length;
     var repText = state.repeats === 0
@@ -861,6 +935,9 @@
   syncChips("catChips", "data-cat", state.cat);
   syncChips("modeChips", "data-mode", state.mode);
   startRound();
+
+  // Debug-Zugriff für Tests (wird von der App selbst nicht genutzt)
+  window.__dbg = { TECHS: TECHS, figureSvg: figureSvg, bindAnims: bindAnims, animator: animator, applyPose: applyPose };
 })();
 </script>
 
