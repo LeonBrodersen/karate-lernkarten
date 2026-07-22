@@ -467,36 +467,70 @@
     return { x: x, y: y, m: f1[4] || fallbackMode };
   }
 
-  // Körpergeometrie beider Ansichten
+  /* Körpergeometrie: realistische Proportionen (~7 Kopfhöhen), Gliedmaßen als
+     umrissene Kapseln (weißer Gi mit Tuschelinie), Kopf/Hände/Füße als Silhouette. */
+  var CARD = "var(--card)";
+
   var GEO = {
-    side: {
-      head: [95, 49, 13], neck: [92, 64], pelvis: [96, 120], shoulder: [93, 68],
-      l1: 27, l2: 25,
-      legs: ["96,120 114,148 112,180 130,180", "96,120 82,150 70,180 54,180"]
-    },
-    front: {
-      head: [110, 47, 13], neck: [110, 66], pelvis: [110, 126],
-      shoulderR: [134, 70], shoulderL: [86, 70],
-      l1: 26, l2: 24,
-      legs: ["110,126 94,154 90,184 78,184", "110,126 126,154 130,184 142,184"]
-    }
+    side: { head: [96, 44, 10.5], shoulder: [93, 68], l1: 28, l2: 26 },
+    front: { head: [110, 42, 10.5], shoulderR: [134, 70], shoulderL: [86, 70], l1: 26, l2: 24 }
   };
 
+  function ln(cls, color, w) {
+    return '<line class="' + cls + '" stroke="' + color + '" stroke-width="' + w + '" stroke-linecap="round"/>';
+  }
+  function circ(cls, r, color) {
+    return '<circle class="' + cls + '" r="' + r + '" fill="' + color + '"/>';
+  }
+  // Statisches Bein-Segment: Umriss + Gi-Füllung
+  function capS(x1, y1, x2, y2, wo, wi) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + SVG_INK + '" stroke-width="' + wo + '" stroke-linecap="round"/>' +
+      '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + CARD + '" stroke-width="' + wi + '" stroke-linecap="round"/>';
+  }
+  function jointS(x, y) {
+    return '<circle cx="' + x + '" cy="' + y + '" r="6.5" fill="' + SVG_INK + '"/><circle cx="' + x + '" cy="' + y + '" r="4.4" fill="' + CARD + '"/>';
+  }
+  function footS(x1, y1, x2, y2) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + SVG_INK + '" stroke-width="7.5" stroke-linecap="round"/>';
+  }
+  // Dynamischer Arm: Oberarm + Ellbogen + Unterarm + Hand, jeweils Umriss und Füllung
+  function armMarkup(sfx, fill, handFill) {
+    return ln("f-aU" + sfx + "o", SVG_INK, 13.5) + ln("f-aU" + sfx + "i", fill, 9.5) +
+      ln("f-aF" + sfx + "o", SVG_INK, 12.5) + ln("f-aF" + sfx + "i", fill, 8.5) +
+      circ("f-aE" + sfx + "o", 6.8, SVG_INK) + circ("f-aE" + sfx + "i", 4.9, fill) +
+      circ("f-h" + sfx + "o", 8, SVG_INK) + circ("f-h" + sfx + "i", 6, handFill) +
+      ln("f-o" + sfx + "o", SVG_INK, 11) + ln("f-o" + sfx + "i", handFill, 7);
+  }
+
   function figureSvg(c) {
-    var g = GEO[c.fig.view];
+    var v = c.fig.view;
     var s = '<svg viewBox="0 0 220 212" data-tech="' + c.id + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bewegungsablauf der Technik">';
-    s += '<line x1="20" y1="188" x2="200" y2="188" stroke="' + SVG_LINE + '" stroke-width="2"/>';
-    s += poly(g.legs[0], SVG_INK, 7) + poly(g.legs[1], SVG_INK, 7);
-    if (c.fig.view === "front") s += poly("86,70 134,70", SVG_INK, 7);
-    s += '<polyline class="f-torso" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="7" stroke-linecap="round"/>';
-    s += '<circle class="f-head" r="' + g.head[2] + '" fill="none" stroke="' + SVG_INK + '" stroke-width="4"/>';
-    s += '<polyline class="f-armO" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
-    s += '<circle class="f-fistO" r="6.5" fill="' + SVG_INK + '" opacity="0"/>';
-    s += '<polyline class="f-openO" points="" fill="none" stroke="' + SVG_INK + '" stroke-width="8" stroke-linecap="round" opacity="0"/>';
-    s += '<polyline class="f-armA" points="" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>';
-    s += '<circle class="f-fistA" r="6.5" fill="' + SVG_ACCENT + '" opacity="0"/>';
-    s += '<polyline class="f-openA" points="" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="8" stroke-linecap="round" opacity="0"/>';
-    s += '<circle class="f-elb" r="5" fill="' + SVG_ACCENT + '" opacity="0"/>';
+    s += '<line x1="16" y1="190" x2="204" y2="190" stroke="' + SVG_LINE + '" stroke-width="2"/>';
+    if (v === "side") {
+      s += armMarkup("O", CARD, SVG_INK); // hinterer Arm liegt hinter dem Körper
+      s += capS(94, 114, 77, 147, 13, 9) + capS(77, 147, 63, 181, 12, 8) + jointS(77, 147); // hinteres Bein
+      s += footS(48, 186, 70, 184);
+      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
+      s += '<line class="f-belt" stroke="' + SVG_ACCENT + '" stroke-width="4.5" stroke-linecap="round"/>';
+      s += capS(94, 114, 117, 146, 13, 9) + capS(117, 146, 114, 181, 12, 8) + jointS(117, 146); // vorderes Bein
+      s += footS(110, 186, 134, 186);
+      s += ln("f-neck", SVG_INK, 6);
+      s += circ("f-head", GEO.side.head[2], SVG_INK);
+      s += armMarkup("A", SVG_ACCENT, SVG_ACCENT); // Technikarm im Vordergrund
+    } else {
+      s += armMarkup("O", CARD, SVG_INK);
+      s += capS(110, 128, 96, 153, 13, 9) + capS(96, 153, 92, 183, 12, 8) + jointS(96, 153);
+      s += capS(110, 128, 124, 153, 13, 9) + capS(124, 153, 128, 183, 12, 8) + jointS(124, 153);
+      s += footS(92, 186, 80, 188) + footS(128, 186, 140, 188);
+      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
+      s += '<line x1="86" y1="105" x2="134" y2="105" stroke="' + SVG_ACCENT + '" stroke-width="5"/>';
+      s += '<rect x="105" y="100" width="10" height="9" rx="2" fill="' + SVG_ACCENT + '"/>' +
+        '<line x1="107" y1="110" x2="104" y2="121" stroke="' + SVG_ACCENT + '" stroke-width="3.5" stroke-linecap="round"/>' +
+        '<line x1="113" y1="110" x2="116" y2="121" stroke="' + SVG_ACCENT + '" stroke-width="3.5" stroke-linecap="round"/>';
+      s += ln("f-neck", SVG_INK, 6);
+      s += circ("f-head", GEO.front.head[2], SVG_INK);
+      s += armMarkup("A", SVG_ACCENT, SVG_ACCENT);
+    }
     if (c.fig.note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.note + "</text>";
     return s + "</svg>";
   }
@@ -505,20 +539,32 @@
 
   var animator = { items: [], raf: 0, start: 0 };
 
+  function setL(el, x1, y1, x2, y2) { el.setAttribute("x1", x1); el.setAttribute("y1", y1); el.setAttribute("x2", x2); el.setAttribute("y2", y2); }
+  function setC(el, x, y) { el.setAttribute("cx", x); el.setAttribute("cy", y); }
+  function vis(el, on) { el.setAttribute("opacity", on ? "1" : "0"); }
+
   function applyPose(it, u) {
-    var fig = it.spec, g = GEO[fig.view];
+    var fig = it.spec, g = GEO[fig.view], e = it.els;
     var dx = fig.drive ? sampleFrames(fig.drive, u, "").x : 0;
     // Lebendige Haltephase: leichtes Atmen statt Einfrieren
     var bob = Math.sin(u * Math.PI * 4) * 0.8;
-    it.els.torso.setAttribute("points", (g.neck[0] + dx) + "," + (g.neck[1] + bob) + " " + g.pelvis[0] + "," + g.pelvis[1]);
-    it.els.head.setAttribute("cx", g.head[0] + dx);
-    it.els.head.setAttribute("cy", g.head[1] + bob);
+    e.head.setAttribute("cx", g.head[0] + dx);
+    e.head.setAttribute("cy", g.head[1] + bob);
+    if (fig.view === "side") {
+      setL(e.neck, 95 + dx * 0.9, 50 + bob, 94 + dx * 0.7, 60 + bob * 0.5);
+      // Oberkörper lehnt sich mit dem Hüftschub nach vorn, Hüfte bleibt stehen
+      e.gi.setAttribute("points", (86 + dx) + "," + (58 + bob) + " " + (105 + dx) + "," + (64 + bob) + " 101,114 83,114");
+      setL(e.belt, 84 + dx * 0.25, 102, 101 + dx * 0.25, 104);
+    } else {
+      setL(e.neck, 110, 48 + bob, 110, 62 + bob * 0.4);
+      e.gi.setAttribute("points", "90," + (63 + bob) + " 130," + (63 + bob) + " 134,119 86,119");
+    }
     var arms = [
-      { spec: fig.accent, sh: fig.view === "side" ? g.shoulder : g.shoulderR, arm: it.els.armA, fist: it.els.fistA, open: it.els.openA, dot: fig.elbowDot },
-      { spec: fig.other, sh: fig.view === "side" ? g.shoulder : g.shoulderL, arm: it.els.armO, fist: it.els.fistO, open: it.els.openO, dot: false }
+      { spec: fig.accent, sh: fig.view === "side" ? g.shoulder : g.shoulderR, sfx: "A" },
+      { spec: fig.other, sh: fig.view === "side" ? g.shoulder : g.shoulderL, sfx: "O" }
     ];
     for (var k = 0; k < arms.length; k++) {
-      var A = arms[k];
+      var A = arms[k], X = A.sfx;
       var sx = A.sh[0] + (fig.view === "side" ? dx : 0), sy = A.sh[1] + bob;
       var p = sampleFrames(A.spec.frames, u, A.spec.mode || "down");
       // Impact-Betonung: kurzes, abklingendes Zittern der Technikhand im Treffmoment
@@ -527,23 +573,24 @@
         p.x += Math.sin(kk * Math.PI * 3) * (1 - kk) * 2.2;
       }
       var r = elbowFor(sx, sy, p.x, p.y, g.l1, g.l2, p.m);
-      A.arm.setAttribute("points", sx + "," + sy + " " + r.ex + "," + r.ey + " " + r.hx + "," + r.hy);
-      if (A.spec.hand === "open") {
+      setL(e["aU" + X + "o"], sx, sy, r.ex, r.ey);
+      setL(e["aU" + X + "i"], sx, sy, r.ex, r.ey);
+      setL(e["aF" + X + "o"], r.ex, r.ey, r.hx, r.hy);
+      setL(e["aF" + X + "i"], r.ex, r.ey, r.hx, r.hy);
+      setC(e["aE" + X + "o"], r.ex, r.ey);
+      setC(e["aE" + X + "i"], r.ex, r.ey);
+      var open = A.spec.hand === "open";
+      vis(e["h" + X + "o"], !open); vis(e["h" + X + "i"], !open);
+      vis(e["o" + X + "o"], open); vis(e["o" + X + "i"], open);
+      if (open) {
         var ux = r.hx - r.ex, uy = r.hy - r.ey;
         var len = Math.sqrt(ux * ux + uy * uy) || 1;
-        A.open.setAttribute("points", r.hx + "," + r.hy + " " + (r.hx + ux / len * 14) + "," + (r.hy + uy / len * 14));
-        A.open.setAttribute("opacity", "1");
-        A.fist.setAttribute("opacity", "0");
+        var tx = r.hx + ux / len * 17, ty = r.hy + uy / len * 17;
+        setL(e["o" + X + "o"], r.hx, r.hy, tx, ty);
+        setL(e["o" + X + "i"], r.hx, r.hy, tx, ty);
       } else {
-        A.fist.setAttribute("cx", r.hx);
-        A.fist.setAttribute("cy", r.hy);
-        A.fist.setAttribute("opacity", "1");
-        A.open.setAttribute("opacity", "0");
-      }
-      if (A.dot) {
-        it.els.elb.setAttribute("cx", r.ex);
-        it.els.elb.setAttribute("cy", r.ey);
-        it.els.elb.setAttribute("opacity", "1");
+        setC(e["h" + X + "o"], r.hx, r.hy);
+        setC(e["h" + X + "i"], r.hx, r.hy);
       }
     }
   }
@@ -563,15 +610,12 @@
       var svg = svgs[i];
       var spec = FIGS[svg.getAttribute("data-tech")];
       if (!spec) continue;
-      animator.items.push({
-        spec: spec,
-        els: {
-          torso: svg.querySelector(".f-torso"), head: svg.querySelector(".f-head"),
-          armA: svg.querySelector(".f-armA"), fistA: svg.querySelector(".f-fistA"), openA: svg.querySelector(".f-openA"),
-          armO: svg.querySelector(".f-armO"), fistO: svg.querySelector(".f-fistO"), openO: svg.querySelector(".f-openO"),
-          elb: svg.querySelector(".f-elb")
-        }
-      });
+      var els = {};
+      ["head", "neck", "gi", "belt",
+        "aUAo", "aUAi", "aFAo", "aFAi", "aEAo", "aEAi", "hAo", "hAi", "oAo", "oAi",
+        "aUOo", "aUOi", "aFOo", "aFOi", "aEOo", "aEOi", "hOo", "hOi", "oOo", "oOi"
+      ].forEach(function (n) { els[n] = svg.querySelector(".f-" + n); });
+      animator.items.push({ spec: spec, els: els });
     }
     // Endposition sofort zeigen; ohne Animationswunsch bleibt sie stehen
     for (var j = 0; j < animator.items.length; j++) applyPose(animator.items[j], 0.5);
@@ -632,9 +676,9 @@
 
   // Hikite in der Seitenansicht: Gegenarm zieht zur Hüfte zurück – bewusst einen Tick
   // nach der Technik (Follow-through statt mechanisch gleichzeitiger Ankunft)
-  var HIKITE_SIDE = { mode: "back", frames: [[0, 140, 68, null, "down"], [0.19, 140, 68, null, "down"], [0.33, 62, 95, "out", "back"], [0.62, 62, 95, null, "back"], [0.90, 140, 68, null, "down"]] };
+  var HIKITE_SIDE = { mode: "back", frames: [[0, 140, 68, null, "down"], [0.19, 140, 68, null, "down"], [0.33, 60, 100, "out", "back"], [0.62, 60, 100, null, "back"], [0.90, 140, 68, null, "down"]] };
   // Faust bleibt schützend an der Hüfte (Seitenansicht)
-  var GUARD_HIP_SIDE = { mode: "back", frames: [[0, 62, 95]] };
+  var GUARD_HIP_SIDE = { mode: "back", frames: [[0, 60, 100]] };
   // Frontansicht: Gegenfaust bleibt an der Hüfte
   var GUARD_HIP_FRONT = { mode: "back", frames: [[0, 80, 112]] };
 
@@ -643,13 +687,13 @@
       desc: "Gerader Fauststoß mit dem vorderen Arm – Faust und vorderes Bein sind auf derselben Seite.",
       combo: "Stand dazu: Junzuki-dachi",
       fig: { view: "side", impactT: 0.30, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0], [0.90, 0, 0]],
-        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 147, 66, "kime", "down"], [0.62, 147, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 66, "kime", "down"], [0.62, 147, 66, null, "down"], [0.90, 62, 100, null, "back"]] },
         other: HIKITE_SIDE } },
     { name: "Gyakuzuki", kanji: "逆突き", german: "Fauststoß, gegengleich",
       desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der scharfen Hüftdrehung.",
       combo: "Stand dazu: Gyakuzuki-dachi",
       fig: { view: "side", note: "Hüfte dreht kraftvoll mit", impactT: 0.30, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0], [0.90, 0, 0]],
-        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 152, 66, "kime", "down"], [0.62, 152, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 152, 66, "kime", "down"], [0.62, 152, 66, null, "down"], [0.90, 62, 100, null, "back"]] },
         other: HIKITE_SIDE } },
     { name: "Uraken-uchi", kanji: "裏拳打ち", german: "Faustrückenschlag",
       desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf. Die Faust schnappt sofort zurück.",
@@ -660,7 +704,7 @@
     { name: "Tettsui-uchi", kanji: "鉄槌打ち", german: "Hammerfaustschlag",
       desc: "Schlag mit der Unterseite der geschlossenen Faust – schwingt wie ein Hammer von oben herab.",
       fig: { view: "side", impactT: 0.33, drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0], [0.90, 0, 0]],
-        accent: { mode: "fwd", frames: [[0, 64, 96, null, "back"], [0.18, 96, 18, null, "fwd", 10], [0.25, 124, 28, "lin", "fwd", 6], [0.33, 140, 60, "kime", "fwd", 8], [0.62, 140, 60, null, "fwd"], [0.90, 64, 96, null, "back"]] },
+        accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.18, 96, 18, null, "fwd", 10], [0.25, 124, 28, "lin", "fwd", 6], [0.33, 140, 60, "kime", "fwd", 8], [0.62, 140, 60, null, "fwd"], [0.90, 62, 100, null, "back"]] },
         other: HIKITE_SIDE } },
     { name: "Shuto-uchi", kanji: "手刀打ち", german: "Handkantenschlag",
       desc: "Schlag mit der Außenkante der offenen Hand – vom Ohr aus in einem Bogen zum Hals geführt.",
@@ -671,12 +715,12 @@
       desc: "Gerader Stoß mit den gestreckten Fingerspitzen – die „Speerhand“.",
       combo: "Meist aus dem Zenkutsu-dachi",
       fig: { view: "side", impactT: 0.30, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0], [0.90, 0, 0]],
-        accent: { mode: "down", hand: "open", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 147, 66, "kime", "down"], [0.62, 147, 66, null, "down"], [0.90, 64, 96, null, "back"]] },
+        accent: { mode: "down", hand: "open", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 66, "kime", "down"], [0.62, 147, 66, null, "down"], [0.90, 62, 100, null, "back"]] },
         other: HIKITE_SIDE } },
     { name: "Empi-uchi", kanji: "猿臂打ち", german: "Ellbogenstoß",
       desc: "Der Ellbogen stößt nach vorn, die Faust bleibt an der Brust – die Technik für den Nahkampf. (Auch: Hiji-ate)",
       fig: { view: "side", elbowDot: true, impactT: 0.30, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0], [0.90, 0, 0]],
-        accent: { mode: "fwd", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.30, 100, 64, "kime", "fwd", 6], [0.62, 100, 64, null, "fwd"], [0.90, 64, 96, null, "back"]] },
+        accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.30, 100, 64, "kime", "fwd", 6], [0.62, 100, 64, null, "fwd"], [0.90, 62, 100, null, "back"]] },
         other: GUARD_HIP_SIDE } },
     { name: "Age-uke", kanji: "上げ受け", german: "Abwehr nach oben",
       desc: "Die Faust steigt vor dem Körper auf, der Unterarm lenkt den Angriff über den Kopf ab. (Auch: Jōdan-uke)",
@@ -688,7 +732,7 @@
       desc: "Ausholen mit der Faust neben dem Ohr, Ellbogen oben – dann schwingt der Unterarm im Halbkreis zur Körpermitte.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
       fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 158, 42, "io", "fwd"], [0.32, 121, 52, "kime", "down", -10], [0.62, 121, 52, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 158, 42, "io", "fwd"], [0.32, 124, 56, "kime", "down", -10], [0.62, 124, 56, null, "down"], [0.90, 140, 112, null, "fwd"]] },
         other: GUARD_HIP_FRONT } },
     { name: "Uchi-uke", kanji: "内受け", german: "Abwehr von innen nach außen",
       desc: "Ausholen an der gegenüberliegenden Hüfte – dann schwingt der Unterarm nach außen, Faust endet auf Schulterhöhe.",
@@ -700,7 +744,7 @@
       desc: "Ausholen mit der Faust an der gegenüberliegenden Schulter – dann fegt der Arm nach unten über das vordere Bein.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
       fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 94, 50, "io", "down"], [0.32, 140, 118, "kime", "down", -10], [0.62, 140, 118, null, "down"], [0.90, 140, 112, null, "fwd"]] },
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 94, 50, "io", "down"], [0.32, 142, 130, "kime", "down", -10], [0.62, 142, 130, null, "down"], [0.90, 140, 112, null, "fwd"]] },
         other: GUARD_HIP_FRONT } },
     { name: "Shuto-uke", kanji: "手刀受け", german: "Handkantenabwehr",
       desc: "Die Handkante schneidet vom gegenüberliegenden Ohr nach außen; die andere Hand schützt offen vor der Brust.",
