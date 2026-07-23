@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#B3342A">
+<meta name="theme-color" content="#F6F2E9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 </head>
@@ -18,18 +19,18 @@
     --line: #E3DCCC;
     --accent: #B3342A;
     --accent-soft: #F3E2DF;
-    --good: #4A7A46;
+    --good: #3E6B3B;
     --good-soft: #E4EDE2;
     --shadow: 0 2px 10px rgba(60, 50, 30, 0.10);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --paper: #17140F;
-      --card: #211E17;
+      --card: #262218;
       --ink: #EDE7DA;
       --ink-soft: #9C937F;
-      --line: #38332A;
-      --accent: #D4544A;
+      --line: #453F32;
+      --accent: #E0665C;
       --accent-soft: #3A2523;
       --good: #7FAE7A;
       --good-soft: #253123;
@@ -44,17 +45,17 @@
     --line: #E3DCCC;
     --accent: #B3342A;
     --accent-soft: #F3E2DF;
-    --good: #4A7A46;
+    --good: #3E6B3B;
     --good-soft: #E4EDE2;
     --shadow: 0 2px 10px rgba(60, 50, 30, 0.10);
   }
   :root[data-theme="dark"] {
     --paper: #17140F;
-    --card: #211E17;
+    --card: #262218;
     --ink: #EDE7DA;
     --ink-soft: #9C937F;
-    --line: #38332A;
-    --accent: #D4544A;
+    --line: #453F32;
+    --accent: #E0665C;
     --accent-soft: #3A2523;
     --good: #7FAE7A;
     --good-soft: #253123;
@@ -98,29 +99,29 @@
   }
   .sub { color: var(--ink-soft); font-size: 13.5px; margin-top: 2px; }
 
-  .chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .chip {
     border: 1.5px solid var(--line);
     background: var(--card);
     color: var(--ink-soft);
     border-radius: 999px;
-    padding: 9px 15px;
+    padding: 10px 4px;
     min-height: 44px;
-    font-size: 14.5px;
+    font-size: 13.5px;
     font-weight: 600;
     cursor: pointer;
   }
   .chip[aria-pressed="true"] {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-soft);
+    border-color: var(--ink);
+    color: var(--card);
+    background: var(--ink);
   }
   .chip:focus-visible, .btn:focus-visible, .card-inner-btn:focus-visible, .linkbtn:focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
   }
-  .mode-row { display: flex; gap: 8px; justify-content: center; }
-  .mode-row .chip { font-size: 14px; padding: 9px 14px; }
+  .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .mode-row .chip { font-size: 12.5px; padding: 6px 2px; min-height: 38px; }
 
   .progress { display: flex; align-items: center; gap: 10px; }
   .progress-label {
@@ -139,7 +140,10 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .stage { perspective: 1200px; flex: 1; display: flex; flex-direction: column; }
+  .stage { perspective: 1200px; flex: 1; display: flex; flex-direction: column; transition: opacity 0.18s ease, transform 0.18s ease; }
+  .stage.swap-out { opacity: 0; transform: translateX(-14px); }
+  .stage.swap-in { animation: cardin 0.22s ease; }
+  @keyframes cardin { from { opacity: 0; transform: translateX(14px); } }
   .card-inner-btn {
     position: relative;
     width: 100%;
@@ -164,6 +168,8 @@
   @media (prefers-reduced-motion: reduce) {
     .card-inner-btn { transition: none; }
     .bar-fill { transition: none; }
+    .stage { transition: none; animation: none !important; }
+    .summary .kanji-mark, .enso circle, .level span.pop { animation: none !important; }
   }
   .face {
     position: absolute;
@@ -181,6 +187,7 @@
     gap: 8px;
     padding: 20px 16px;
     overflow: hidden;
+    overflow-y: auto;
   }
   .face.back { transform: rotateY(180deg); }
   .face-tag {
@@ -194,42 +201,46 @@
     color: var(--ink-soft);
     font-weight: 600;
   }
-  .face svg { width: min(74vw, 290px); height: auto; display: block; }
+  .face svg { width: min(74vw, 290px); height: auto; display: block; flex-shrink: 0; }
   .big-name {
     font-family: "Iowan Old Style", "Palatino", "Noto Serif", Georgia, serif;
-    font-size: 31px;
+    font-size: 30px;
     line-height: 1.15;
     margin: 0;
     text-wrap: balance;
   }
   .kanji {
     font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", "Noto Serif", Georgia, serif;
-    color: var(--accent);
-    font-size: 17px;
-    letter-spacing: 0.25em;
-  }
-  .german { font-size: 16.5px; font-weight: 650; }
-  .desc { color: var(--ink-soft); font-size: 16px; line-height: 1.45; max-width: 34ch; margin: 0; }
-  .combo {
-    border: 1.5px solid var(--line);
-    border-radius: 999px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 600;
     color: var(--ink-soft);
-    max-width: 90%;
+    font-size: 14px;
+    letter-spacing: 0.2em;
+  }
+  .german { font-size: 19px; font-weight: 600; }
+  .desc { color: var(--ink-soft); font-size: 15px; line-height: 1.45; max-width: 34ch; margin: 0; }
+  .combo {
+    background: var(--paper);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    max-width: 92%;
   }
   .level {
-    font-size: 13px;
-    color: var(--ink-soft);
+    position: absolute;
+    top: 13px;
+    right: 16px;
+    font-size: 11px;
   }
-  .level span { letter-spacing: 3px; color: var(--good); }
+  .level span { letter-spacing: 3px; color: var(--good); display: inline-block; }
+  .level span.pop { animation: lvlpop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+  @keyframes lvlpop { from { transform: scale(1.5); } }
   .flip-hint {
     position: absolute;
     bottom: 13px;
     left: 0;
     right: 0;
-    font-size: 14.5px;
+    font-size: 13px;
     color: var(--ink-soft);
   }
 
@@ -253,10 +264,11 @@
     font-weight: 700;
     cursor: pointer;
     font-family: inherit;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, transform 0.1s;
   }
+  .btn:active { transform: scale(0.96); }
   .btn:disabled { opacity: 0.35; cursor: default; }
-  .btn-again { background: var(--accent-soft); color: var(--accent); }
+  .btn-again { background: transparent; border: 1.5px solid var(--line); color: var(--ink); }
   .btn-known { background: var(--good-soft); color: var(--good); }
 
   .summary {
@@ -276,7 +288,17 @@
     min-height: clamp(300px, 52dvh, 430px);
   }
   .summary .big-name { font-size: 27px; }
-  .summary-stats { color: var(--ink-soft); font-size: 15.5px; line-height: 1.6; }
+  .summary-stats { color: var(--ink-soft); font-size: 15px; line-height: 1.6; width: 100%; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .stat { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .stat b { display: block; font-size: 26px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .hanko-wrap { position: relative; display: inline-block; padding: 10px; }
+  .summary .kanji-mark { display: inline-block; animation: hanko 0.4s cubic-bezier(0.2, 1.4, 0.4, 1); }
+  @keyframes hanko { from { opacity: 0; transform: scale(1.8) rotate(-8deg); } }
+  .enso { position: absolute; inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); pointer-events: none; }
+  .enso circle { stroke-dasharray: 107; stroke-dashoffset: 107; }
+  .summary.perfect .enso circle { animation: enso 0.7s ease 0.35s forwards; }
+  @keyframes enso { to { stroke-dashoffset: 0; } }
   .btn-primary {
     background: var(--accent);
     color: #FFFDF8;
@@ -285,10 +307,12 @@
   }
 
   footer {
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: wrap;
     color: var(--ink-soft);
     font-size: 13px;
-    line-height: 1.55;
     padding-top: 2px;
   }
   .linkbtn {
@@ -336,6 +360,13 @@
     font-size: 16.5px;
     line-height: 1.45;
   }
+  #onboard .ob-small {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0;
+    text-align: left;
+  }
   #onboard .ob-num {
     background: var(--accent);
     color: #FFFDF8;
@@ -353,9 +384,7 @@
 
 <div class="wrap">
   <header>
-    <div><span class="kanji-mark">和道流</span></div>
-    <h1>Karate Lernkarten</h1>
-    <div class="sub">Wadō-Ryū · Stände &amp; Handtechniken</div>
+    <h1><span class="kanji-mark">和道流</span> Karate Lernkarten</h1>
   </header>
 
   <div class="chips" id="catChips" role="group" aria-label="Kategorie">
@@ -365,8 +394,8 @@
   </div>
 
   <div class="mode-row" id="modeChips" role="group" aria-label="Abfrage-Richtung">
-    <button class="chip" data-mode="img2name" aria-pressed="false">Bild → Name</button>
-    <button class="chip" data-mode="name2img" aria-pressed="false">Name → Bild</button>
+    <button class="chip" data-mode="img2name" aria-pressed="false">Bild→Name</button>
+    <button class="chip" data-mode="name2img" aria-pressed="false">Name→Bild</button>
     <button class="chip" data-mode="mixed" aria-pressed="true">Gemischt</button>
   </div>
 
@@ -374,7 +403,6 @@
     <div class="bar"><div class="bar-fill" id="barFill"></div></div>
     <div class="progress-label" id="progLabel"></div>
   </div>
-  <div class="longterm" id="longterm"></div>
 
   <div class="stage" id="stage">
     <button class="card-inner-btn" id="card" aria-label="Lernkarte, tippen zum Umdrehen">
@@ -384,7 +412,7 @@
   </div>
 
   <div class="summary hidden" id="summary">
-    <div class="kanji-mark" style="font-size:22px">和</div>
+    <div class="hanko-wrap"><span class="kanji-mark" style="font-size:26px">和</span><svg class="enso" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/></svg></div>
     <p class="big-name">Runde geschafft!</p>
     <div class="summary-stats" id="summaryStats"></div>
     <button class="btn btn-primary" id="btnRestart">Neue Runde starten</button>
@@ -396,13 +424,10 @@
   </div>
 
   <footer>
-    Tippe auf die Karte, um sie umzudrehen. Jede Karte hat eine Übungsstufe (●○○○ bis ●●●●):<br>
-    „Gewusst" hebt sie eine Stufe, „Nochmal üben" setzt sie zurück. Sichere Karten kommen nur noch selten dran.<br>
-    Die Zeichnungen sind vereinfacht – im Zweifel gilt, was im Training gesagt wird.<br>
-    <strong>Tipp:</strong> In Chrome oben rechts ⋮ antippen und „Zum Startbildschirm hinzufügen".<br>
-    <button class="linkbtn" id="exportProg">Lernstand sichern</button> ·
-    <button class="linkbtn" id="importProg">Lernstand laden</button> ·
-    <button class="linkbtn" id="resetProg">Lernstand zurücksetzen</button>
+    <button class="linkbtn" id="helpBtn">Hilfe</button>
+    <button class="linkbtn" id="exportProg">Sichern</button>
+    <button class="linkbtn" id="importProg">Laden</button>
+    <button class="linkbtn" id="resetProg">Zurücksetzen</button>
   </footer>
 </div>
 
@@ -413,6 +438,7 @@
     <div class="ob-step"><span class="ob-num">1</span><span>Tippe auf die Karte, um sie umzudrehen.</span></div>
     <div class="ob-step"><span class="ob-num">2</span><span>Sag ehrlich: <strong>Gewusst</strong> oder <strong>Nochmal üben</strong>?</span></div>
     <div class="ob-step"><span class="ob-num">3</span><span>Die App merkt sich, was dir schwerfällt, und fragt genau das wieder ab &ndash; am besten jeden Tag ein paar Minuten.</span></div>
+    <p class="ob-small">Die Punkte ●○○○ oben rechts auf der Antwortseite zeigen deine Übungsstufe. Die Zeichnungen sind vereinfacht &ndash; es gilt, was dein Trainer sagt.<br><strong>Tipp:</strong> In Chrome ⋮ antippen und &bdquo;App installieren&ldquo; &ndash; dann bekommst du ein eigenes App-Symbol.</p>
     <button class="btn btn-primary" id="obStart">Los geht&rsquo;s!</button>
   </div>
 </div>
@@ -428,11 +454,11 @@
   var SVG_ACCENT = "var(--accent)";
   var SVG_LINE = "var(--line)";
 
-  var MARKER = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">' +
+  var MARKER = '<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
     '<path d="M0,0 L10,5 L0,10 z" fill="' + SVG_ACCENT + '"/></marker></defs>';
 
   // Fußsohle (rechter Fuß, Spitze nach oben, Ursprung in der Fußmitte)
-  var SOLE = "M 0 -32 C 9 -32 14 -23 13 -10 C 12 3 11 14 8 24 C 6 31 -4 31 -7 25 C -10 16 -12 3 -12 -9 C -12 -25 -8 -32 0 -32 Z";
+  var SOLE = "M 0 -32 C 9 -32 14 -23 13 -10 C 12 3 11 14 8 24 C 6 31 -3 31 -5.5 25 C -8 17 -9.5 6 -10 -4 C -11 -22 -8 -32 0 -32 Z";
   // Nur Fußballen (Ferse angehoben, z. B. Neko-ashi)
   var BALL_SOLE = "M 0 -27 C 8 -27 13 -20 13 -12 C 13 -4 8 1 0 1 C -8 1 -13 -4 -13 -12 C -13 -20 -8 -27 0 -27 Z";
 
@@ -440,21 +466,23 @@
     return '<circle cx="-7" cy="' + (-37 + dy) + '" r="4"/>' +
       '<circle cx="-1" cy="' + (-39 + dy) + '" r="2.6"/>' +
       '<circle cx="4" cy="' + (-37.5 + dy) + '" r="2.2"/>' +
-      '<circle cx="8" cy="' + (-35 + dy) + '" r="1.9"/>';
+      '<circle cx="8" cy="' + (-35 + dy) + '" r="1.9"/>' +
+      '<circle cx="11" cy="' + (-32 + dy) + '" r="1.7"/>';
   }
 
   function foot(f) {
     var sx = f.side === "L" ? -0.8 : 0.8;
     var tf = "translate(" + f.x + "," + f.y + ") rotate(" + f.a + ") scale(" + sx + ",0.8)";
     var s = '<g transform="' + tf + '">' +
-      '<path d="' + (f.ball ? BALL_SOLE : SOLE) + '" fill="' + SVG_INK + '" fill-opacity="' + (f.heavy ? "0.18" : "0.05") + '"' +
+      '<path d="' + (f.ball ? BALL_SOLE : SOLE) + '" fill="' + SVG_INK + '" fill-opacity="' + (f.heavy ? "0.35" : "0.08") + '"' +
       ' stroke="' + SVG_INK + '" stroke-width="4.2" stroke-linejoin="round"/>' +
       '<g fill="' + SVG_INK + '">' + toes(f.ball ? 5 : 0) + "</g></g>";
     // L/R immer aufrecht, unabhängig von der Fußdrehung
-    s += '<text x="' + f.x + '" y="' + (f.y + 5) + '" text-anchor="middle" font-size="12" font-weight="700" fill="' + SVG_SOFT + '">' +
+    s += '<text x="' + f.x + '" y="' + (f.ball ? f.y - 6 : f.y + 5) + '" text-anchor="middle" font-size="14" font-weight="700" stroke="var(--card)" stroke-width="4" paint-order="stroke" fill="' + SVG_INK + '">' +
       (f.side === "L" ? "L" : "R") + "</text>";
     if (f.label) {
-      s += '<text x="' + f.x + '" y="' + (f.y + 46) + '" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + f.label + "</text>";
+      var ly = f.y + (f.ball ? 16 : (Math.abs(f.a) >= 60 ? 26 : 46));
+      s += '<text x="' + f.x + '" y="' + ly + '" text-anchor="middle" font-size="13" font-weight="600" stroke="var(--card)" stroke-width="4" paint-order="stroke" fill="' + SVG_SOFT + '">' + f.label + "</text>";
     }
     return s;
   }
@@ -462,10 +490,13 @@
   // Stand-Diagramm: Blick von oben auf die eigenen Füße, Blickrichtung nach oben
   function stanceArt(feet, note) {
     var s = '<svg viewBox="0 0 220 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fußstellung von oben">' + MARKER;
-    s += '<line x1="110" y1="32" x2="110" y2="210" stroke="' + SVG_LINE + '" stroke-width="1.5" stroke-dasharray="4 6"/>';
+    s += '<line x1="110" y1="32" x2="110" y2="195" stroke="' + SVG_LINE + '" stroke-width="1.5" stroke-dasharray="4 6"/>';
     s += '<line x1="20" y1="120" x2="200" y2="120" stroke="' + SVG_LINE + '" stroke-width="1.5" stroke-dasharray="4 6"/>';
-    s += '<line x1="110" y1="30" x2="110" y2="12" stroke="' + SVG_ACCENT + '" stroke-width="2.5" marker-end="url(#ah)"/>';
-    s += '<text x="118" y="22" font-size="12" font-weight="600" fill="' + SVG_ACCENT + '">vorn</text>';
+    // Schulterbreite-Referenz: Ticks bei ±30 (= Heiko-dachi)
+    s += '<line x1="80" y1="115" x2="80" y2="125" stroke="' + SVG_LINE + '" stroke-width="2"/>';
+    s += '<line x1="140" y1="115" x2="140" y2="125" stroke="' + SVG_LINE + '" stroke-width="2"/>';
+    s += '<line x1="110" y1="30" x2="110" y2="8" stroke="' + SVG_ACCENT + '" stroke-width="2.5" marker-end="url(#ah)"/>';
+    s += '<text x="118" y="20" font-size="13" font-weight="700" stroke="var(--card)" stroke-width="4" paint-order="stroke" fill="' + SVG_ACCENT + '">vorn</text>';
     for (var i = 0; i < feet.length; i++) {
       var f = Object.assign({}, feet[i]);
       f.x = 110 + f.x;
@@ -473,7 +504,7 @@
       s += foot(f);
     }
     if (note) {
-      s += '<text x="110" y="227" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + note + "</text>";
+      s += '<text x="110" y="227" text-anchor="middle" font-size="13" font-weight="600" stroke="var(--card)" stroke-width="4" paint-order="stroke" fill="' + SVG_SOFT + '">' + note + "</text>";
     }
     return s + "</svg>";
   }
@@ -490,13 +521,15 @@
      Ablauf pro Schleife: Ausholen -> Technik (schnell) -> halten -> langsam zurück. */
 
   var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var CYCLE = 3.2; // Sekunden pro Durchlauf
+  var CYCLE = 3.6; // Sekunden pro Durchlauf
 
   var EASES = {
     io: function (u) { return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; },
     out: function (u) { return 1 - Math.pow(1 - u, 3); },
-    // Kime: leichtes Überschwingen (~4 %) und Setzen – nimmt der Endposition die Roboterhaftigkeit
+    // Kime: Überschwingen und Setzen – nimmt der Endposition die Roboterhaftigkeit
     kime: function (u) { u -= 1; return 1 + u * u * (2.4 * u + 1.4); },
+    // Sanftes Kime für fast gestreckte Techniken (kleiner Overshoot, den die Reichweite noch hergibt)
+    kimes: function (u) { u -= 1; return 1 + u * u * (1.85 * u + 0.85); },
     lin: function (u) { return u; }
   };
 
@@ -556,7 +589,7 @@
 
   var GEO = {
     side: { head: [96, 44, 10.5], shoulder: [93, 68], l1: 28, l2: 26 },
-    front: { head: [110, 42, 10.5], shoulderR: [134, 70], shoulderL: [86, 70], l1: 26, l2: 24 }
+    front: { head: [110, 42, 10.5], shoulderR: [134, 70], shoulderL: [86, 70], l1: 28, l2: 26 }
   };
 
   function ln(cls, color, w) {
@@ -571,7 +604,7 @@
       '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + CARD + '" stroke-width="' + wi + '" stroke-linecap="round"/>';
   }
   function jointS(x, y) {
-    return '<circle cx="' + x + '" cy="' + y + '" r="6.5" fill="' + SVG_INK + '"/><circle cx="' + x + '" cy="' + y + '" r="4.4" fill="' + CARD + '"/>';
+    return '<circle cx="' + x + '" cy="' + y + '" r="5.8" fill="' + SVG_INK + '"/><circle cx="' + x + '" cy="' + y + '" r="4.8" fill="' + CARD + '"/>';
   }
   /* Füße als Silhouetten. Seitenansicht: Profilfuß mit Ferse, Sohle, Spann und
      Zehen (Ursprung am Knöchel, Sohle liegt auf dem Boden). Frontansicht:
@@ -592,15 +625,15 @@
   function armMarkup(sfx, fill, handFill) {
     return ln("f-aU" + sfx + "o", SVG_INK, 13.5) + ln("f-aU" + sfx + "i", fill, 9.5) +
       ln("f-aF" + sfx + "o", SVG_INK, 12.5) + ln("f-aF" + sfx + "i", fill, 8.5) +
-      circ("f-aE" + sfx + "o", 6.3, SVG_INK) + circ("f-aE" + sfx + "i", 4.4, fill) +
+      circ("f-aE" + sfx + "o", 5.6, SVG_INK) + circ("f-aE" + sfx + "i", 4.7, fill) +
       '<g class="f-h' + sfx + '">' +
-        '<rect x="-4" y="-7" width="11.5" height="14" rx="4.5" fill="' + SVG_INK + '"/>' +
-        '<rect x="-2" y="-5" width="7.6" height="10" rx="3" fill="' + handFill + '"/>' +
-        '<line x1="4.6" y1="-3.4" x2="4.6" y2="3.4" stroke="' + SVG_INK + '" stroke-width="2"/>' +
+        '<rect x="-4.5" y="-8.25" width="13" height="16.5" rx="5" fill="' + SVG_INK + '"/>' +
+        '<rect x="-2.4" y="-6" width="8.6" height="12" rx="3.4" fill="' + handFill + '"/>' +
+        '<line x1="5.4" y1="-4" x2="5.4" y2="4" stroke="' + SVG_INK + '" stroke-width="1.5"/>' +
       "</g>" +
       '<g class="f-o' + sfx + '">' +
-        '<polygon points="-1,-6.5 16,-4.6 20,0 16,4.6 -1,6.5" fill="' + SVG_INK + '"/>' +
-        '<polygon points="-1,-4.1 14.5,-2.8 17.4,0 14.5,2.8 -1,4.1" fill="' + handFill + '"/>' +
+        '<polygon points="-1,-6.5 13,-4.6 16.5,0 13,4.6 -1,6.5" fill="' + SVG_INK + '"/>' +
+        '<polygon points="-1,-4.1 11.5,-2.8 13.9,0 11.5,2.8 -1,4.1" fill="' + handFill + '"/>' +
         '<circle cx="3.5" cy="-5.4" r="2.6" fill="' + SVG_INK + '"/>' +
       "</g>";
   }
@@ -613,52 +646,54 @@
       s += '<line x1="146" y1="' + c.fig.target.y + '" x2="204" y2="' + c.fig.target.y + '" stroke="' + SVG_SOFT + '" stroke-width="1.5" stroke-dasharray="3 5"/>' +
         '<text x="204" y="' + (c.fig.target.y - 5) + '" text-anchor="end" font-size="11" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.target.l + "</text>";
     }
+    s += '<g class="f-fig">';
     if (v === "side") {
       s += armMarkup("O", CARD, SVG_INK); // hinterer Arm liegt hinter dem Körper
       // hinteres Bein: im Vorwärtsstand fast gestreckt, Fuß leicht verkürzt (ausgedreht)
-      s += capS(94, 114, 79, 149, 14.5, 10.5) + capS(79, 149, 64, 181, 13, 9.5) + jointS(79, 149);
+      s += capS(94, 114, 79, 149, 14.5, 10.5) + capS(79, 149, 64, 181, 13.5, 9.5) + jointS(79, 149);
       s += footSide(64, 181, 0.88);
-      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
-      s += ln("f-lapel", SVG_INK, 2.5);
-      s += '<line class="f-belt" stroke="' + SVG_ACCENT + '" stroke-width="4.5" stroke-linecap="round"/>';
-      s += '<circle class="f-beltknot" r="3.6" fill="' + SVG_ACCENT + '"/>';
-      s += '<line class="f-beltend" stroke="' + SVG_ACCENT + '" stroke-width="3.2" stroke-linecap="round"/>';
+      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
+      s += ln("f-lapel", SVG_INK, 1.6);
+      s += '<line class="f-belt" stroke="' + SVG_INK + '" stroke-width="4" stroke-linecap="round"/>';
+      s += '<circle class="f-beltknot" r="3.4" fill="' + SVG_INK + '"/>';
+      s += '<line class="f-beltend" stroke="' + SVG_INK + '" stroke-width="3" stroke-linecap="round"/>';
       // vorderes Bein: dynamisch – das Knie beugt sich mit dem Hüftschub in die Technik
       s += ln("f-lThO", SVG_INK, 14.5) + ln("f-lThI", CARD, 10.5);
-      s += ln("f-lShO", SVG_INK, 13) + ln("f-lShI", CARD, 9.5);
-      s += '<circle class="f-lKo" r="6.5" fill="' + SVG_INK + '"/><circle class="f-lKi" r="4.4" fill="' + CARD + '"/>';
+      s += ln("f-lShO", SVG_INK, 13.5) + ln("f-lShI", CARD, 9.5);
+      s += '<circle class="f-lKo" r="5.8" fill="' + SVG_INK + '"/><circle class="f-lKi" r="4.8" fill="' + CARD + '"/>';
       s += footSide(114, 181, 1);
       s += ln("f-neck", SVG_INK, 6);
       s += '<g class="f-head"><circle cx="95.5" cy="42.5" r="10.3" fill="' + SVG_INK + '"/>' +
         '<ellipse cx="98.5" cy="48.5" rx="7.6" ry="6.2" fill="' + SVG_INK + '"/>' +
-        '<circle cx="105.8" cy="46.5" r="2.7" fill="' + SVG_INK + '"/></g>';
+        '<circle cx="106.8" cy="46.5" r="2.7" fill="' + SVG_INK + '"/></g>';
       s += armMarkup("A", SVG_ACCENT, SVG_ACCENT); // Technikarm im Vordergrund
-      s += '<circle class="f-capA" r="7" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>'; // Schulter
+      s += '<circle class="f-capA" r="7" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.2"/>'; // Schulter
       s += '<circle class="f-spark" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="3" opacity="0"/>';
     } else {
       s += armMarkup("O", CARD, SVG_INK);
       // natürlicher schulterbreiter Stand: Beine fast senkrecht, Füße leicht auswärts
-      s += capS(116, 128, 126, 150, 14.5, 10.5) + capS(126, 150, 135, 178, 13, 9.5) + jointS(126, 150); // hinteres Bein
-      s += footFront(136, 178, 1, 24, 0.92);
-      s += capS(104, 128, 98, 154, 14.5, 10.5) + capS(98, 154, 95, 182, 13, 9.5) + jointS(98, 154); // vorderes Bein
-      s += footFront(94, 182, -1, -6, 1.05);
-      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
-      s += '<rect x="93" y="114" width="34" height="17" rx="5" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>'; // Hüftpartie
-      s += '<line x1="103" y1="64" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="2.5"/>' +
-        '<line x1="117" y1="64" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
-      s += '<line x1="86" y1="105" x2="134" y2="105" stroke="' + SVG_ACCENT + '" stroke-width="5"/>';
-      s += '<rect x="105" y="100" width="10" height="9" rx="2" fill="' + SVG_ACCENT + '"/>' +
-        '<line x1="107" y1="110" x2="104" y2="121" stroke="' + SVG_ACCENT + '" stroke-width="3.5" stroke-linecap="round"/>' +
-        '<line x1="113" y1="110" x2="116" y2="121" stroke="' + SVG_ACCENT + '" stroke-width="3.5" stroke-linecap="round"/>';
-      s += ln("f-neck", SVG_INK, 6);
-      s += '<g class="f-head"><circle cx="100.8" cy="43.5" r="2" fill="' + SVG_INK + '"/><circle cx="119.2" cy="43.5" r="2" fill="' + SVG_INK + '"/>' +
+      s += capS(116, 120, 127, 148, 14.5, 10.5) + capS(127, 148, 135, 179.5, 13.5, 9.5) + jointS(127, 148); // hinteres Bein
+      s += footFront(136, 179.5, 1, 24, 0.92);
+      s += capS(104, 120, 97, 151, 14.5, 10.5) + capS(97, 151, 95, 183.5, 13.5, 9.5) + jointS(97, 151); // vorderes Bein
+      s += footFront(94, 183.5, -1, -6, 1.05);
+      s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.2" stroke-linejoin="round"/>';
+      s += '<rect x="93" y="106" width="34" height="17" rx="3" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.2"/>'; // Hüftpartie
+      s += '<line x1="103" y1="66" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="1.6"/>' +
+        '<line x1="117" y1="66" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="1.6"/>';
+      s += '<line x1="86" y1="104" x2="134" y2="104" stroke="' + SVG_INK + '" stroke-width="4.5"/>';
+      s += '<rect x="105" y="99" width="10" height="9" rx="2" fill="' + SVG_INK + '"/>' +
+        '<line x1="107" y1="108" x2="104" y2="119" stroke="' + SVG_INK + '" stroke-width="3.5" stroke-linecap="round"/>' +
+        '<line x1="113" y1="108" x2="116" y2="119" stroke="' + SVG_INK + '" stroke-width="3.5" stroke-linecap="round"/>';
+      s += ln("f-neck", SVG_INK, 8);
+      s += '<g class="f-head"><circle cx="100.4" cy="44" r="2.7" fill="' + SVG_INK + '"/><circle cx="119.6" cy="44" r="2.7" fill="' + SVG_INK + '"/>' +
         '<circle cx="110" cy="39.5" r="9.8" fill="' + SVG_INK + '"/>' +
         '<ellipse cx="110" cy="46" rx="7.8" ry="7.6" fill="' + SVG_INK + '"/></g>';
       s += armMarkup("A", SVG_ACCENT, SVG_ACCENT);
-      s += '<circle class="f-capL" r="6.5" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
-      s += '<circle class="f-capA" r="6.5" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
+      s += '<circle class="f-capL" r="6.5" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.2"/>';
+      s += '<circle class="f-capA" r="6.5" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.2"/>';
       s += '<circle class="f-spark" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="3" opacity="0"/>';
     }
+    s += "</g>";
     if (c.fig.note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.note + "</text>";
     return s + "</svg>";
   }
@@ -676,17 +711,20 @@
     /* Reset statt Rückwärts-Animation: die Technik wird gehalten, dann blendet
        die Figur kurz aus, springt unsichtbar in die Ausgangsposition und blendet
        wieder ein. Der animierte Rückweg war die Hauptquelle für Gelenk-Fehler. */
-    var FADE0 = 0.78, MID = 0.88, FADE1 = 0.98;
+    var FADE0 = 0.74, MID = 0.85, FADE1 = 0.96;
     var su = u >= MID ? 0 : u;
     var op = 1;
     if (u >= FADE0 && u < MID) op = 1 - 0.92 * (u - FADE0) / (MID - FADE0);
     else if (u >= MID && u < FADE1) op = 0.08 + 0.92 * (u - MID) / (FADE1 - MID);
-    it.svg.style.opacity = op.toFixed(3);
+    if (it.els.fig) it.els.fig.setAttribute("opacity", op.toFixed(3));
+    else it.svg.style.opacity = op.toFixed(3);
     u = su;
     var dx = fig.drive ? sampleFrames(fig.drive, u, "").x : 0;
+    var dip = 0;
+    if (fig.view === "front" && u >= 0.27 && u < 0.74) dip = 2 * EASES.out(Math.min(1, (u - 0.27) / 0.13));
     // Lebendige Haltephase: leichtes Atmen statt Einfrieren
-    var bob = Math.sin(u * Math.PI * 4) * 0.8;
-    e.head.setAttribute("transform", "translate(" + dx + "," + bob + ")");
+    var bob = Math.sin(u * Math.PI * 2) * 1.3;
+    e.head.setAttribute("transform", "translate(" + dx + "," + (bob + dip) + ")");
     if (fig.view === "side") {
       setL(e.neck, 95 + dx * 0.9, 50 + bob, 94 + dx * 0.7, 60 + bob * 0.5);
       // Oberkörper lehnt sich mit dem Hüftschub nach vorn, Hüfte bleibt stehen
@@ -702,10 +740,10 @@
       setC(e.lKo, kx, ky); setC(e.lKi, kx, ky);
       setC(e.capA, 93 + dx, 68 + bob);
     } else {
-      setL(e.neck, 110, 48 + bob, 110, 62 + bob * 0.4);
-      e.gi.setAttribute("points", "90," + (63 + bob) + " 130," + (63 + bob) + " 134,119 86,119");
-      setC(e.capA, 134, 70 + bob);
-      setC(e.capL, 86, 70 + bob);
+      setL(e.neck, 110, 48 + bob + dip, 110, 62 + bob * 0.4 + dip);
+      e.gi.setAttribute("points", "90," + (65 + bob + dip) + " 110," + (62 + bob + dip) + " 130," + (65 + bob + dip) + " 134,111 86,111");
+      setC(e.capA, 134, 70 + bob + dip);
+      setC(e.capL, 86, 70 + bob + dip);
     }
     var arms = [
       { spec: fig.accent, sh: fig.view === "side" ? g.shoulder : g.shoulderR, sfx: "A" },
@@ -713,15 +751,17 @@
     ];
     for (var k = 0; k < arms.length; k++) {
       var A = arms[k], X = A.sfx;
-      var sx = A.sh[0] + (fig.view === "side" ? dx : 0), sy = A.sh[1] + bob;
+      var sx = A.sh[0] + (fig.view === "side" ? dx : 0), sy = A.sh[1] + bob + dip;
       var p = sampleFrames(A.spec.frames, u, A.spec.mode || "down");
       // Impact-Betonung: kurzes, abklingendes Zittern der Technikhand im Treffmoment
-      if (k === 0 && fig.impactT && u > fig.impactT && u <= fig.impactT + 0.06) {
-        var kk = (u - fig.impactT) / 0.06;
+      if (k === 0 && fig.impactT && u > fig.impactT && u <= fig.impactT + 0.055) {
+        var kk = (u - fig.impactT) / 0.055;
         p.x += Math.sin(kk * Math.PI * 3) * (1 - kk) * 2.2;
       }
+      // Moving Hold: die Technikhand sinkt über die Haltephase minimal ab
+      if (k === 0 && u > 0.45 && u < 0.74) p.y += (u - 0.45) * 3.4;
       var r = elbowFor(sx, sy, p.x, p.y, g.l1, g.l2, p.m);
-      if (k === 0) { it.sparkX = r.hx; it.sparkY = r.hy; }
+      if (k === 0) { if (fig.impactAt === "elbow") { it.sparkX = r.ex; it.sparkY = r.ey; } else { it.sparkX = r.hx; it.sparkY = r.hy; } }
       /* Ellbogen weich nachführen: wechselt die IK die Beugerichtung (z. B. von
          der Hüft-Kammer in den Stoß), springt der Ziel-Ellbogen schlagartig auf
          die andere Armseite. Statt des Sprungs dämpfen wir den gezeichneten
@@ -759,12 +799,13 @@
     }
     // Treffer-Funke: kurzer, expandierender Ring an der Technikhand im Impact-Moment
     if (e.spark) {
-      if (fig.impactT && u > fig.impactT && u <= fig.impactT + 0.09) {
-        var ks = (u - fig.impactT) / 0.09;
+      if (fig.impactT && u > fig.impactT && u <= fig.impactT + 0.055) {
+        var ks = (u - fig.impactT) / 0.055;
         e.spark.setAttribute("cx", it.sparkX);
         e.spark.setAttribute("cy", it.sparkY);
-        e.spark.setAttribute("r", (5 + ks * 12).toFixed(1));
-        e.spark.setAttribute("opacity", ((1 - ks) * 0.85).toFixed(2));
+        e.spark.setAttribute("r", (3 + ks * 13).toFixed(1));
+        e.spark.setAttribute("stroke-width", (3 - 2 * ks).toFixed(2));
+        e.spark.setAttribute("opacity", ((1 - ks) * 0.9).toFixed(2));
       } else {
         e.spark.setAttribute("opacity", "0");
       }
@@ -789,7 +830,7 @@
       var spec = FIGS[svg.getAttribute("data-tech")];
       if (!spec) continue;
       var els = {};
-      ["head", "neck", "gi", "belt", "lapel", "beltknot", "beltend", "lThO", "lThI", "lShO", "lShI", "lKo", "lKi", "capA", "capL", "spark",
+      ["head", "neck", "gi", "belt", "lapel", "fig", "beltknot", "beltend", "lThO", "lThI", "lShO", "lShI", "lKo", "lKi", "capA", "capL", "spark",
         "aUAo", "aUAi", "aFAo", "aFAi", "aEAo", "aEAi", "hA", "oA",
         "aUOo", "aUOi", "aFOo", "aFOi", "aEOo", "aEOi", "hO", "oO"
       ].forEach(function (n) { els[n] = svg.querySelector(".f-" + n); });
@@ -816,14 +857,14 @@
       art: stanceArt([{ side: "L", x: -10, y: 2, a: -30 }, { side: "R", x: 10, y: 2, a: 30 }]) },
     { name: "Heiko-dachi", kanji: "平行立ち", german: "Paralleler Stand",
       desc: "Füße schulterbreit auseinander und parallel.",
-      art: stanceArt([{ side: "L", x: -30, y: 0, a: 0 }, { side: "R", x: 30, y: 0, a: 0 }]) },
+      art: stanceArt([{ side: "L", x: -30, y: 0, a: 0 }, { side: "R", x: 30, y: 0, a: 0 }], "Abstand = schulterbreit (Striche)") },
     { name: "Hachiji-dachi", kanji: "八字立ち", german: "Natürlicher Stand",
       desc: "Schulterbreit, die Fußspitzen zeigen leicht nach außen.",
       art: stanceArt([{ side: "L", x: -30, y: 0, a: -18 }, { side: "R", x: 30, y: 0, a: 18 }]) },
     { name: "Naihanchi-dachi", kanji: "ナイハンチ立ち", german: "Seitwärtsstand",
       desc: "Breiter Stand: Füße parallel bis leicht einwärts, Knie gebeugt und nach außen gespannt.",
       combo: "Stand der Kata Naihanchi",
-      art: stanceArt([{ side: "L", x: -42, y: 0, a: 4 }, { side: "R", x: 42, y: 0, a: -4 }]) },
+      art: stanceArt([{ side: "L", x: -42, y: 0, a: 4 }, { side: "R", x: 42, y: 0, a: -4 }], "Fußspitzen minimal einwärts") },
     { name: "Kiba-dachi", kanji: "騎馬立ち", german: "Reiterstand",
       desc: "Breiter, tiefer Stand mit parallelen Füßen – wie im Reitersitz.",
       art: stanceArt([{ side: "L", x: -52, y: 0, a: 0 }, { side: "R", x: 52, y: 0, a: 0 }]) },
@@ -837,11 +878,11 @@
     { name: "Junzuki-dachi", kanji: "順突立ち", german: "Wadō-Vorwärtsstand",
       desc: "Der schmale, natürliche Vorwärtsstand des Wadō-Ryū.",
       combo: "Gehört zum Junzuki",
-      art: stanceArt([{ side: "L", x: -12, y: -40, a: 0, heavy: true }, { side: "R", x: 12, y: 40, a: 18 }]) },
+      art: stanceArt([{ side: "L", x: -12, y: -40, a: 0, heavy: true, label: "60 %" }, { side: "R", x: 12, y: 40, a: 25, label: "40 %" }]) },
     { name: "Gyakuzuki-dachi", kanji: "逆突立ち", german: "Stand mit eingedrehter Hüfte",
       desc: "Ähnlich dem Junzuki-dachi, aber die Hüfte ist eingedreht – der hintere Fuß zeigt dadurch stärker nach vorn, die Ferse drückt nach außen.",
       combo: "Gehört zum Gyakuzuki",
-      art: stanceArt([{ side: "L", x: -15, y: -40, a: 8 }, { side: "R", x: 15, y: 40, a: 12 }]) },
+      art: stanceArt([{ side: "L", x: -15, y: -40, a: 8 }, { side: "R", x: 15, y: 40, a: 8 }], "Ferse drückt nach außen") },
     { name: "Kokutsu-dachi", kanji: "後屈立ち", german: "Rückwärtsstand",
       desc: "Das Gewicht liegt überwiegend auf dem hinteren Bein, der vordere Fuß zeigt nach vorn.",
       art: stanceArt([{ side: "L", x: -6, y: -42, a: 0, label: "30 %" }, { side: "R", x: 8, y: 40, a: 75, heavy: true, label: "70 %" }]) },
@@ -852,7 +893,7 @@
     { name: "Tate-seishan-dachi", kanji: "セイシャン立ち", german: "Seishan-Stand (längs)",
       desc: "Füße hüftbreit, ein Fuß etwa eine Fußlänge vor, beide zeigen nach vorn – aus der Kata Seishan.",
       combo: "Praktisch der Stand des Gyakuzuki",
-      art: stanceArt([{ side: "L", x: -13, y: -36, a: 0 }, { side: "R", x: 13, y: 36, a: 0 }]) }
+      art: stanceArt([{ side: "L", x: -13, y: -36, a: 0 }, { side: "R", x: 13, y: 36, a: 0 }], "Beide Füße parallel nach vorn") }
   ];
 
   // Hikite in der Seitenansicht: Gegenarm zieht zur Hüfte zurück – bewusst einen Tick
@@ -861,26 +902,26 @@
   // Faust bleibt schützend an der Hüfte (Seitenansicht)
   var GUARD_HIP_SIDE = { mode: "back", frames: [[0, 60, 100]] };
   // Frontansicht: Gegenarm ist vorgestreckt (Schutzhand) und zieht mit dem Block als Hikite zur Hüfte
-  var HIKITE_FRONT = { mode: "down", frames: [[0, 95, 88], [0.18, 95, 88], [0.32, 82, 112, "out"], [0.62, 82, 112]] };
+  var HIKITE_FRONT = { mode: "down", frames: [[0, 95, 88], [0.22, 95, 88], [0.36, 82, 112, "out"], [0.62, 82, 112]] };
 
   var TECHS = [
     { name: "Junzuki", kanji: "順突き", german: "Fauststoß, gleichseitig",
       desc: "Gerader Fauststoß mit dem vorderen Arm – Faust und vorderes Bein sind auf derselben Seite.",
       combo: "Stand dazu: Junzuki-dachi",
-      fig: { view: "side", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
-        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kime", "down"], [0.62, 147, 78, null, "down"]] },
+      fig: { view: "side", impactT: 0.24, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
+        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kimes", "down"], [0.62, 147, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Gyakuzuki", kanji: "逆突き", german: "Fauststoß, gegengleich",
       desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der scharfen Hüftdrehung.",
       combo: "Stand dazu: Gyakuzuki-dachi",
-      fig: { view: "side", note: "Hüfte dreht kraftvoll mit", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0]],
-        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 152, 78, "kime", "down"], [0.62, 152, 78, null, "down"]] },
+      fig: { view: "side", note: "Hüfte dreht kraftvoll mit", impactT: 0.24, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0]],
+        accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 152, 78, "kimes", "down"], [0.62, 152, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Tobikomizuki", kanji: "飛び込み突き", german: "Fauststoß mit Körpervorlage",
       desc: "Weiter Fauststoß zum Kopf (Jōdan), bei dem der ganze Körper nach vorn ins Ziel fällt – ein Markenzeichen des Wadō-Ryū.",
       combo: "Wadō-typische Weiterentwicklung des Junzuki",
-      fig: { view: "side", note: "Der Körper fällt mit nach vorn", impactT: 0.30, target: { y: 54, l: "Jōdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 14, 0, "out"], [0.62, 14, 0]],
-        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 150, 54, "kime", "down"], [0.62, 150, 54, null, "down"]] },
+      fig: { view: "side", note: "Der Körper fällt mit nach vorn", impactT: 0.24, target: { y: 54, l: "Jōdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 14, 0, "out"], [0.62, 14, 0]],
+        accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 156, 52, "kimes", "down"], [0.62, 156, 52, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Uraken-uchi", kanji: "裏拳打ち", german: "Faustrückenschlag",
       desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf. Die Faust schnappt sofort zurück.",
@@ -890,55 +931,55 @@
         other: GUARD_HIP_SIDE } },
     { name: "Tettsui-uchi", kanji: "鉄槌打ち", german: "Hammerfaustschlag",
       desc: "Schlag mit der Unterseite der geschlossenen Faust – schwingt wie ein Hammer von oben herab.",
-      fig: { view: "side", impactT: 0.33, target: { y: 60, l: "Chūdan" }, drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0]],
-        accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.18, 96, 18, null, "fwd", 10], [0.25, 124, 28, "lin", "fwd", 6], [0.33, 140, 60, "kime", "fwd", 8], [0.62, 140, 60, null, "fwd"]] },
+      fig: { view: "side", impactT: 0.34, target: { y: 60, l: "Chūdan" }, drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0]],
+        accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.18, 96, 18, null, "fwd", 10], [0.26, 96, 18, null, "fwd"], [0.31, 124, 28, "lin", "fwd", 6], [0.38, 140, 60, "kime", "fwd", 8], [0.62, 140, 60, null, "fwd"]] },
         other: HIKITE_SIDE } },
     { name: "Shuto-uchi", kanji: "手刀打ち", german: "Handkantenschlag",
       desc: "Schlag mit der Außenkante der offenen Hand – vom Ohr aus in einem Bogen zum Hals geführt.",
-      fig: { view: "side", impactT: 0.32, target: { y: 58, l: "Jōdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.32, 5, 0, "out"], [0.62, 5, 0]],
+      fig: { view: "side", impactT: 0.27, target: { y: 58, l: "Jōdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.32, 5, 0, "out"], [0.62, 5, 0]],
         accent: { mode: "down", hand: "open", frames: [[0, 78, 52], [0.16, 78, 52], [0.24, 118, 34, "lin", "fwd", 8], [0.32, 147, 60, "kime", "down", 8], [0.62, 147, 60, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Nukite", kanji: "貫手", german: "Fingerspitzenstoß",
       desc: "Gerader Stoß mit den gestreckten Fingerspitzen – die „Speerhand“.",
       combo: "Meist aus dem Zenkutsu-dachi",
-      fig: { view: "side", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
-        accent: { mode: "down", hand: "open", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kime", "down"], [0.62, 147, 78, null, "down"]] },
+      fig: { view: "side", impactT: 0.24, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
+        accent: { mode: "down", hand: "open", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kimes", "down"], [0.62, 147, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Empi-uchi", kanji: "猿臂打ち", german: "Ellbogenstoß",
       desc: "Der Ellbogen stößt nach vorn, die Faust bleibt an der Brust – die Technik für den Nahkampf. (Auch: Hiji-ate)",
-      fig: { view: "side", elbowDot: true, impactT: 0.30, target: { y: 64, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0]],
+      fig: { view: "side", impactAt: "elbow", impactT: 0.22, target: { y: 64, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0]],
         accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.30, 100, 64, "kime", "fwd", 6], [0.62, 100, 64, null, "fwd"]] },
         other: GUARD_HIP_SIDE } },
     { name: "Age-uke", kanji: "上げ受け", german: "Abwehr nach oben",
       desc: "Die Faust steigt vor dem Körper auf, der Unterarm lenkt den Angriff über den Kopf ab. (Auch: Jōdan-uke)",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      fig: { view: "front", impactT: 0.30,
-        accent: { mode: "fwd", frames: [[0, 140, 112, null, "fwd"], [0.16, 94, 86, "io", "down"], [0.30, 118, 24, "kime", "fwd", 8], [0.62, 118, 24, null, "fwd"]] },
+      fig: { view: "front", impactT: 0.31,
+        accent: { mode: "fwd", frames: [[0, 140, 112, null, "fwd"], [0.16, 94, 86, "io", "down"], [0.25, 94, 86, null, "down"], [0.38, 117, 30, "kimes", "fwd", 8], [0.62, 117, 30, null, "fwd"]] },
         other: HIKITE_FRONT } },
     { name: "Soto-uke", kanji: "外受け", german: "Abwehr von außen nach innen",
       desc: "Ausholen mit der Faust neben dem Ohr, Ellbogen oben – dann schwingt der Unterarm im Halbkreis zur Körpermitte. (Manche Dojos benennen Soto/Uchi genau umgekehrt – es gilt dein Trainer.)",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 158, 42, "io", "fwd"], [0.32, 124, 56, "kime", "down", -10], [0.62, 124, 56, null, "down"]] },
+      fig: { view: "front", impactT: 0.33,
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 158, 42, "io", "fwd"], [0.27, 158, 42, null, "fwd"], [0.40, 124, 56, "kime", "down", -10], [0.62, 124, 56, null, "down"]] },
         other: HIKITE_FRONT } },
     { name: "Uchi-uke", kanji: "内受け", german: "Abwehr von innen nach außen",
       desc: "Ausholen an der gegenüberliegenden Hüfte – dann schwingt der Unterarm nach außen, Faust endet auf Schulterhöhe. (Manche Dojos benennen Soto/Uchi genau umgekehrt – es gilt dein Trainer.)",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 92, 98, "io", "down"], [0.32, 154, 50, "kime", "down", 10], [0.62, 154, 50, null, "down"]] },
+      fig: { view: "front", impactT: 0.33,
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 92, 98, "io", "down"], [0.27, 92, 98, null, "down"], [0.40, 154, 50, "kime", "down", 10], [0.62, 154, 50, null, "down"]] },
         other: HIKITE_FRONT } },
     { name: "Gedan-barai", kanji: "下段払い", german: "Abwehr nach unten",
       desc: "Ausholen mit der Faust an der gegenüberliegenden Schulter – dann fegt der Arm nach unten über das vordere Bein.",
       combo: "Grundschule: meist im Zenkutsu-dachi",
-      fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 94, 50, "io", "down"], [0.32, 142, 130, "kime", "down", -10], [0.62, 142, 130, null, "down"]] },
+      fig: { view: "front", impactT: 0.33,
+        accent: { mode: "down", frames: [[0, 140, 112, null, "fwd"], [0.18, 94, 50, "io", "down"], [0.27, 94, 50, null, "down"], [0.40, 138, 122, "kimes", "down", -10], [0.62, 138, 122, null, "down"]] },
         other: HIKITE_FRONT } },
     { name: "Shuto-uke", kanji: "手刀受け", german: "Handkantenabwehr",
       desc: "Die Handkante schneidet vom gegenüberliegenden Ohr nach außen; die andere Hand schützt offen vor der Brust.",
       combo: "Typisch im Neko-ashi-dachi",
-      fig: { view: "front", impactT: 0.32,
-        accent: { mode: "down", hand: "open", frames: [[0, 140, 112, null, "fwd"], [0.18, 96, 46, "io", "down"], [0.32, 156, 60, "kime", "down", 10], [0.62, 156, 60, null, "down"]] },
-        other: { mode: "down", hand: "open", frames: [[0, 95, 88], [0.18, 95, 88], [0.32, 104, 90, "out"], [0.62, 104, 90]] } } }
+      fig: { view: "front", impactT: 0.33,
+        accent: { mode: "down", hand: "open", frames: [[0, 140, 112, null, "fwd"], [0.18, 96, 46, "io", "down"], [0.27, 96, 46, null, "down"], [0.40, 156, 60, "kime", "down", 10], [0.62, 156, 60, null, "down"]] },
+        other: { mode: "down", hand: "open", frames: [[0, 95, 88], [0.24, 95, 88], [0.38, 104, 90, "out"], [0.62, 104, 90]] } } }
   ];
 
   STANCES.forEach(function (c) { c.cat = "stand"; c.id = "s-" + c.name; });
@@ -992,13 +1033,15 @@
     if (["img2name", "name2img", "mixed"].indexOf(saved.mode) >= 0) state.mode = saved.mode;
   } catch (e) { /* localStorage nicht verfügbar – egal */ }
 
+  var flips = 0;
+  try { flips = parseInt(localStorage.getItem("karate-flips"), 10) || 0; } catch (e) { flips = 0; }
+
   var el = {
     card: document.getElementById("card"),
     front: document.getElementById("faceFront"),
     back: document.getElementById("faceBack"),
     barFill: document.getElementById("barFill"),
     progLabel: document.getElementById("progLabel"),
-    longterm: document.getElementById("longterm"),
     btnAgain: document.getElementById("btnAgain"),
     btnKnown: document.getElementById("btnKnown"),
     summary: document.getElementById("summary"),
@@ -1050,13 +1093,13 @@
     nextCard();
   }
 
-  function catLabel(c) { return c === "stand" ? "Fußstellung" : "Handtechnik"; }
+  function catLabel(c) { return c === "stand" ? "Fußstellung · von oben" : "Handtechnik"; }
 
   function levelDots(id) {
     var b = boxOf(id);
     var dots = "";
     for (var i = 1; i <= MAXBOX; i++) dots += i <= b ? "●" : "○";
-    return '<div class="level">Übungsstufe <span>' + dots + "</span></div>";
+    return '<div class="level"><span>' + dots + "</span></div>";
   }
 
   function comboChip(c) {
@@ -1084,10 +1127,10 @@
     state.flipped = false;
     void el.card.offsetWidth;
     if (dir === "img2name") {
-      el.front.innerHTML = imgFace(c) + '<div class="flip-hint">Wie heißt das? · Tippen zum Umdrehen</div>';
+      el.front.innerHTML = imgFace(c) + '<div class="flip-hint">' + (flips >= 15 ? "Wie heißt das?" : "Wie heißt das? · Tippen zum Umdrehen") + "</div>";
       el.back.innerHTML = nameFace(c, true);
     } else {
-      el.front.innerHTML = nameFace(c, false) + '<div class="flip-hint">Wie sieht das aus? · Tippen zum Umdrehen</div>';
+      el.front.innerHTML = nameFace(c, false) + '<div class="flip-hint">' + (flips >= 15 ? "Wie sieht das aus?" : "Wie sieht das aus? · Tippen zum Umdrehen") + "</div>";
       el.back.innerHTML = imgFace(c) + '<p class="desc">' + c.desc + "</p>" + comboChip(c) + levelDots(c.id);
     }
     void el.card.offsetWidth;
@@ -1101,11 +1144,9 @@
   function updateProgress() {
     var pct = state.total ? Math.round((state.mastered / state.total) * 100) : 0;
     el.barFill.style.width = pct + "%";
-    el.progLabel.textContent = state.mastered + " / " + state.total + " in dieser Runde";
     var cards = cardsForCat();
-    var safe = cards.filter(function (c) { return boxOf(c.id) >= MAXBOX; }).length;
     var dueN = cards.filter(function (c) { return dueOf(c.id) <= Date.now(); }).length;
-    el.longterm.textContent = "Heute fällig: " + dueN + " · Sicher: " + safe + " von " + cards.length;
+    el.progLabel.textContent = state.mastered + " / " + state.total + " · Fällig: " + dueN;
   }
 
   function nextCard() {
@@ -1128,40 +1169,76 @@
     bindAnims();
     var cards = cardsForCat();
     var safe = cards.filter(function (c) { return boxOf(c.id) >= MAXBOX; }).length;
-    var repText = state.repeats === 0
-      ? "Alles beim ersten Mal gewusst – stark!"
-      : state.repeats + (state.repeats === 1 ? " Wiederholung" : " Wiederholungen") + " in dieser Runde.";
     var dueN = cards.filter(function (c) { return dueOf(c.id) <= Date.now(); }).length;
-    el.summaryStats.innerHTML = state.total + " Karten geübt. " + repText +
-      "<br>Sicher gemerkt: " + safe + " von " + cards.length + " Karten." +
+    el.summary.classList.toggle("perfect", state.repeats === 0);
+    var mark = el.summary.querySelector(".kanji-mark");
+    if (mark) { mark.style.animation = "none"; void mark.offsetWidth; mark.style.animation = ""; }
+    el.summaryStats.innerHTML =
+      '<div class="stats">' +
+      '<div class="stat"><b>' + state.total + "</b>geübt</div>" +
+      '<div class="stat"><b>' + state.repeats + "</b>wiederholt</div>" +
+      '<div class="stat"><b>' + safe + "/" + cards.length + "</b>sicher</div>" +
+      "</div>" +
       (dueN === 0
-        ? "<br><strong>Für heute alles erledigt!</strong> Die nächsten Karten sind ab morgen wieder fällig."
-        : "<br>Noch " + dueN + " Karten fällig – gern gleich eine Runde dranhängen.");
+        ? "<strong>Für heute alles erledigt!</strong> Neues gibt es ab morgen."
+        : "Noch " + dueN + " Karten fällig – häng gern eine Runde dran.");
     updateProgress();
   }
 
   el.card.addEventListener("click", function () {
     if (state.flipped) return; // einmal umgedreht bleibt umgedreht – verhindert Doppeltipp-Flackern
     state.flipped = true;
+    flips++;
+    try { localStorage.setItem("karate-flips", String(flips)); } catch (e) { /* egal */ }
     el.card.classList.add("flipped");
     el.btnAgain.disabled = false;
     el.btnKnown.disabled = false;
   });
 
+  // Kartenwechsel mit kurzem Übergang statt hartem Sprung
+  function swapCard(fn) {
+    if (REDUCE) { fn(); return; }
+    el.stage.classList.add("swap-out");
+    setTimeout(function () {
+      fn();
+      el.stage.classList.remove("swap-out");
+      el.stage.classList.add("swap-in");
+      setTimeout(function () { el.stage.classList.remove("swap-in"); }, 240);
+    }, 180);
+  }
+
   el.btnKnown.addEventListener("click", function () {
+    if (el.btnKnown.disabled) return;
+    el.btnKnown.disabled = true;
+    el.btnAgain.disabled = true;
     var c = state.queue.shift();
-    setBox(c.id, Math.min(MAXBOX, boxOf(c.id) + 1));
+    var nb = Math.min(MAXBOX, boxOf(c.id) + 1);
+    setBox(c.id, nb);
     state.mastered++;
-    nextCard();
+    if (navigator.vibrate) navigator.vibrate(8);
+    // Stufen-Moment: der neue Punkt füllt sich sichtbar, bevor die Karte wechselt
+    var lvl = el.card.querySelector(".level span");
+    if (lvl && !REDUCE) {
+      var dots = "";
+      for (var i = 1; i <= MAXBOX; i++) dots += i <= nb ? "●" : "○";
+      lvl.textContent = dots;
+      lvl.classList.add("pop");
+      setTimeout(function () { swapCard(nextCard); }, 420);
+    } else {
+      swapCard(nextCard);
+    }
   });
 
   el.btnAgain.addEventListener("click", function () {
+    if (el.btnAgain.disabled) return;
+    el.btnAgain.disabled = true;
+    el.btnKnown.disabled = true;
     var c = state.queue.shift();
     setBox(c.id, Math.max(1, boxOf(c.id) - 1));
     state.repeats++;
     var pos = Math.min(3, state.queue.length);
     state.queue.splice(pos, 0, c);
-    nextCard();
+    swapCard(nextCard);
   });
 
   document.getElementById("btnRestart").addEventListener("click", startRound);
@@ -1249,6 +1326,9 @@
   document.getElementById("obStart").addEventListener("click", function () {
     ob.classList.add("hidden");
     try { localStorage.setItem("karate-onboard", "1"); } catch (e) { /* egal */ }
+  });
+  document.getElementById("helpBtn").addEventListener("click", function () {
+    ob.classList.remove("hidden");
   });
 
   // PWA: offline-fähig und installierbar (nur dort, wo sw.js existiert)
