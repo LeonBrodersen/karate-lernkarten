@@ -609,6 +609,10 @@
     var v = c.fig.view;
     var s = '<svg viewBox="0 0 220 212" data-tech="' + c.id + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bewegungsablauf der Technik">';
     s += '<line x1="16" y1="190" x2="204" y2="190" stroke="' + SVG_LINE + '" stroke-width="2"/>';
+    if (c.fig.target) {
+      s += '<line x1="146" y1="' + c.fig.target.y + '" x2="204" y2="' + c.fig.target.y + '" stroke="' + SVG_SOFT + '" stroke-width="1.5" stroke-dasharray="3 5"/>' +
+        '<text x="204" y="' + (c.fig.target.y - 5) + '" text-anchor="end" font-size="11" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.target.l + "</text>";
+    }
     if (v === "side") {
       s += armMarkup("O", CARD, SVG_INK); // hinterer Arm liegt hinter dem Körper
       // hinteres Bein: im Vorwärtsstand fast gestreckt, Fuß leicht verkürzt (ausgedreht)
@@ -617,13 +621,20 @@
       s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
       s += ln("f-lapel", SVG_INK, 2.5);
       s += '<line class="f-belt" stroke="' + SVG_ACCENT + '" stroke-width="4.5" stroke-linecap="round"/>';
-      s += capS(94, 114, 117, 146, 14.5, 10.5) + capS(117, 146, 114, 181, 13, 9.5) + jointS(117, 146); // vorderes Bein
+      s += '<circle class="f-beltknot" r="3.6" fill="' + SVG_ACCENT + '"/>';
+      s += '<line class="f-beltend" stroke="' + SVG_ACCENT + '" stroke-width="3.2" stroke-linecap="round"/>';
+      // vorderes Bein: dynamisch – das Knie beugt sich mit dem Hüftschub in die Technik
+      s += ln("f-lThO", SVG_INK, 14.5) + ln("f-lThI", CARD, 10.5);
+      s += ln("f-lShO", SVG_INK, 13) + ln("f-lShI", CARD, 9.5);
+      s += '<circle class="f-lKo" r="6.5" fill="' + SVG_INK + '"/><circle class="f-lKi" r="4.4" fill="' + CARD + '"/>';
       s += footSide(114, 181, 1);
       s += ln("f-neck", SVG_INK, 6);
       s += '<g class="f-head"><circle cx="95.5" cy="42.5" r="10.3" fill="' + SVG_INK + '"/>' +
         '<ellipse cx="98.5" cy="48.5" rx="7.6" ry="6.2" fill="' + SVG_INK + '"/>' +
         '<circle cx="105.8" cy="46.5" r="2.7" fill="' + SVG_INK + '"/></g>';
       s += armMarkup("A", SVG_ACCENT, SVG_ACCENT); // Technikarm im Vordergrund
+      s += '<circle class="f-capA" r="7" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>'; // Schulter
+      s += '<circle class="f-spark" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="3" opacity="0"/>';
     } else {
       s += armMarkup("O", CARD, SVG_INK);
       // natürlicher schulterbreiter Stand: Beine fast senkrecht, Füße leicht auswärts
@@ -632,6 +643,7 @@
       s += capS(104, 128, 98, 154, 14.5, 10.5) + capS(98, 154, 95, 182, 13, 9.5) + jointS(98, 154); // vorderes Bein
       s += footFront(94, 182, -1, -6, 1.05);
       s += '<polygon class="f-gi" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="3" stroke-linejoin="round"/>';
+      s += '<rect x="93" y="114" width="34" height="17" rx="5" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>'; // Hüftpartie
       s += '<line x1="103" y1="64" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="2.5"/>' +
         '<line x1="117" y1="64" x2="110" y2="91" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
       s += '<line x1="86" y1="105" x2="134" y2="105" stroke="' + SVG_ACCENT + '" stroke-width="5"/>';
@@ -643,6 +655,9 @@
         '<circle cx="110" cy="39.5" r="9.8" fill="' + SVG_INK + '"/>' +
         '<ellipse cx="110" cy="46" rx="7.8" ry="7.6" fill="' + SVG_INK + '"/></g>';
       s += armMarkup("A", SVG_ACCENT, SVG_ACCENT);
+      s += '<circle class="f-capL" r="6.5" fill="' + CARD + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
+      s += '<circle class="f-capA" r="6.5" fill="' + SVG_ACCENT + '" stroke="' + SVG_INK + '" stroke-width="2.5"/>';
+      s += '<circle class="f-spark" fill="none" stroke="' + SVG_ACCENT + '" stroke-width="3" opacity="0"/>';
     }
     if (c.fig.note) s += '<text x="110" y="208" text-anchor="middle" font-size="13" font-weight="600" fill="' + SVG_SOFT + '">' + c.fig.note + "</text>";
     return s + "</svg>";
@@ -678,9 +693,19 @@
       e.gi.setAttribute("points", (86 + dx) + "," + (58 + bob) + " " + (105 + dx) + "," + (64 + bob) + " 101,114 83,114");
       setL(e.lapel, 99 + dx * 0.85, 62 + bob, 102 + dx * 0.3, 86);
       setL(e.belt, 84 + dx * 0.25, 102, 101 + dx * 0.25, 104);
+      setC(e.beltknot, 99 + dx * 0.25, 104);
+      setL(e.beltend, 99 + dx * 0.25, 107, 96 + dx * 0.2, 118);
+      // vorderes Knie beugt sich mit dem Hüftschub – der Körper sinkt in die Technik
+      var kx = 117 + dx * 0.55, ky = 146 + dx * 0.08;
+      setL(e.lThO, 94, 114, kx, ky); setL(e.lThI, 94, 114, kx, ky);
+      setL(e.lShO, kx, ky, 114, 181); setL(e.lShI, kx, ky, 114, 181);
+      setC(e.lKo, kx, ky); setC(e.lKi, kx, ky);
+      setC(e.capA, 93 + dx, 68 + bob);
     } else {
       setL(e.neck, 110, 48 + bob, 110, 62 + bob * 0.4);
       e.gi.setAttribute("points", "90," + (63 + bob) + " 130," + (63 + bob) + " 134,119 86,119");
+      setC(e.capA, 134, 70 + bob);
+      setC(e.capL, 86, 70 + bob);
     }
     var arms = [
       { spec: fig.accent, sh: fig.view === "side" ? g.shoulder : g.shoulderR, sfx: "A" },
@@ -696,6 +721,7 @@
         p.x += Math.sin(kk * Math.PI * 3) * (1 - kk) * 2.2;
       }
       var r = elbowFor(sx, sy, p.x, p.y, g.l1, g.l2, p.m);
+      if (k === 0) { it.sparkX = r.hx; it.sparkY = r.hy; }
       /* Ellbogen weich nachführen: wechselt die IK die Beugerichtung (z. B. von
          der Hüft-Kammer in den Stoß), springt der Ziel-Ellbogen schlagartig auf
          die andere Armseite. Statt des Sprungs dämpfen wir den gezeichneten
@@ -731,6 +757,18 @@
       vis(e["o" + X], open);
       (open ? e["o" + X] : e["h" + X]).setAttribute("transform", tf);
     }
+    // Treffer-Funke: kurzer, expandierender Ring an der Technikhand im Impact-Moment
+    if (e.spark) {
+      if (fig.impactT && u > fig.impactT && u <= fig.impactT + 0.09) {
+        var ks = (u - fig.impactT) / 0.09;
+        e.spark.setAttribute("cx", it.sparkX);
+        e.spark.setAttribute("cy", it.sparkY);
+        e.spark.setAttribute("r", (5 + ks * 12).toFixed(1));
+        e.spark.setAttribute("opacity", ((1 - ks) * 0.85).toFixed(2));
+      } else {
+        e.spark.setAttribute("opacity", "0");
+      }
+    }
   }
 
   function animTick(ts) {
@@ -751,7 +789,7 @@
       var spec = FIGS[svg.getAttribute("data-tech")];
       if (!spec) continue;
       var els = {};
-      ["head", "neck", "gi", "belt", "lapel",
+      ["head", "neck", "gi", "belt", "lapel", "beltknot", "beltend", "lThO", "lThI", "lShO", "lShI", "lKo", "lKi", "capA", "capL", "spark",
         "aUAo", "aUAi", "aFAo", "aFAi", "aEAo", "aEAi", "hA", "oA",
         "aUOo", "aUOi", "aFOo", "aFOi", "aEOo", "aEOi", "hO", "oO"
       ].forEach(function (n) { els[n] = svg.querySelector(".f-" + n); });
@@ -829,46 +867,46 @@
     { name: "Junzuki", kanji: "順突き", german: "Fauststoß, gleichseitig",
       desc: "Gerader Fauststoß mit dem vorderen Arm – Faust und vorderes Bein sind auf derselben Seite.",
       combo: "Stand dazu: Junzuki-dachi",
-      fig: { view: "side", impactT: 0.30, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
+      fig: { view: "side", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
         accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kime", "down"], [0.62, 147, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Gyakuzuki", kanji: "逆突き", german: "Fauststoß, gegengleich",
       desc: "Gerader Fauststoß mit dem hinteren Arm – die Kraft kommt aus der scharfen Hüftdrehung.",
       combo: "Stand dazu: Gyakuzuki-dachi",
-      fig: { view: "side", note: "Hüfte dreht kraftvoll mit", impactT: 0.30, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0]],
+      fig: { view: "side", note: "Hüfte dreht kraftvoll mit", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 10, 0, "out"], [0.62, 10, 0]],
         accent: { mode: "down", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 152, 78, "kime", "down"], [0.62, 152, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Tobikomizuki", kanji: "飛び込み突き", german: "Fauststoß mit Körpervorlage",
       desc: "Weiter Fauststoß zum Kopf (Jōdan), bei dem der ganze Körper nach vorn ins Ziel fällt – ein Markenzeichen des Wadō-Ryū.",
       combo: "Wadō-typische Weiterentwicklung des Junzuki",
-      fig: { view: "side", note: "Der Körper fällt mit nach vorn", impactT: 0.30, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 14, 0, "out"], [0.62, 14, 0]],
+      fig: { view: "side", note: "Der Körper fällt mit nach vorn", impactT: 0.30, target: { y: 54, l: "Jōdan" }, drive: [[0, 0, 0], [0.20, 0, 0], [0.30, 14, 0, "out"], [0.62, 14, 0]],
         accent: { mode: "down", frames: [[0, 64, 96, null, "back"], [0.16, 64, 96, null, "back"], [0.20, 61, 98, "io", "back"], [0.30, 150, 54, "kime", "down"], [0.62, 150, 54, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Uraken-uchi", kanji: "裏拳打ち", german: "Faustrückenschlag",
       desc: "Schneller, schnappender Schlag mit dem Faustrücken – meist zum Kopf. Die Faust schnappt sofort zurück.",
       combo: "Kommt u. a. in der Kata Naihanchi vor",
-      fig: { view: "side", impactT: 0.26, drive: [[0, 0, 0], [0.16, 0, 0], [0.26, 3, 0, "out"], [0.62, 3, 0]],
+      fig: { view: "side", impactT: 0.26, target: { y: 44, l: "Jōdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.26, 3, 0, "out"], [0.62, 3, 0]],
         accent: { mode: "down", frames: [[0, 78, 80], [0.16, 78, 80], [0.26, 140, 44, "out", null, 12], [0.34, 140, 44], [0.44, 108, 64, "out", null, 8], [0.62, 108, 64]] },
         other: GUARD_HIP_SIDE } },
     { name: "Tettsui-uchi", kanji: "鉄槌打ち", german: "Hammerfaustschlag",
       desc: "Schlag mit der Unterseite der geschlossenen Faust – schwingt wie ein Hammer von oben herab.",
-      fig: { view: "side", impactT: 0.33, drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0]],
+      fig: { view: "side", impactT: 0.33, target: { y: 60, l: "Chūdan" }, drive: [[0, 0, 0], [0.18, 0, 0], [0.33, 5, 0, "out"], [0.62, 5, 0]],
         accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.18, 96, 18, null, "fwd", 10], [0.25, 124, 28, "lin", "fwd", 6], [0.33, 140, 60, "kime", "fwd", 8], [0.62, 140, 60, null, "fwd"]] },
         other: HIKITE_SIDE } },
     { name: "Shuto-uchi", kanji: "手刀打ち", german: "Handkantenschlag",
       desc: "Schlag mit der Außenkante der offenen Hand – vom Ohr aus in einem Bogen zum Hals geführt.",
-      fig: { view: "side", impactT: 0.32, drive: [[0, 0, 0], [0.16, 0, 0], [0.32, 5, 0, "out"], [0.62, 5, 0]],
+      fig: { view: "side", impactT: 0.32, target: { y: 58, l: "Jōdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.32, 5, 0, "out"], [0.62, 5, 0]],
         accent: { mode: "down", hand: "open", frames: [[0, 78, 52], [0.16, 78, 52], [0.24, 118, 34, "lin", "fwd", 8], [0.32, 147, 60, "kime", "down", 8], [0.62, 147, 60, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Nukite", kanji: "貫手", german: "Fingerspitzenstoß",
       desc: "Gerader Stoß mit den gestreckten Fingerspitzen – die „Speerhand“.",
       combo: "Meist aus dem Zenkutsu-dachi",
-      fig: { view: "side", impactT: 0.30, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
+      fig: { view: "side", impactT: 0.30, target: { y: 78, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 4, 0, "out"], [0.62, 4, 0]],
         accent: { mode: "down", hand: "open", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.20, 59, 102, "io", "back"], [0.30, 147, 78, "kime", "down"], [0.62, 147, 78, null, "down"]] },
         other: HIKITE_SIDE } },
     { name: "Empi-uchi", kanji: "猿臂打ち", german: "Ellbogenstoß",
       desc: "Der Ellbogen stößt nach vorn, die Faust bleibt an der Brust – die Technik für den Nahkampf. (Auch: Hiji-ate)",
-      fig: { view: "side", elbowDot: true, impactT: 0.30, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0]],
+      fig: { view: "side", elbowDot: true, impactT: 0.30, target: { y: 64, l: "Chūdan" }, drive: [[0, 0, 0], [0.16, 0, 0], [0.30, 7, 0, "out"], [0.62, 7, 0]],
         accent: { mode: "fwd", frames: [[0, 62, 100, null, "back"], [0.16, 62, 100, null, "back"], [0.30, 100, 64, "kime", "fwd", 6], [0.62, 100, 64, null, "fwd"]] },
         other: GUARD_HIP_SIDE } },
     { name: "Age-uke", kanji: "上げ受け", german: "Abwehr nach oben",
